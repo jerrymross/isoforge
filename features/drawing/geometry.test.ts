@@ -4,6 +4,9 @@ import {
   autoSizeObjects,
   isoGridOffset,
   makeIsoBox,
+  normalizeAngle,
+  objectRotationTransform,
+  snapObjectAngle,
   snapIsoLine,
   snapPoint,
   tileDiamond,
@@ -97,5 +100,17 @@ describe("isometrisk geometri", () => {
     expect(width).toBe(100);
     expect(height).toBe(100);
     expect(sized.points[2].y).toBe(336);
+  });
+
+  it("snaps free rotation to the nearest isometric direction", () => {
+    expect(snapObjectAngle(24)).toBe(26.565);
+    expect(snapObjectAngle(101)).toBe(90);
+    expect(normalizeAngle(450)).toBe(90);
+  });
+
+  it("creates an SVG rotation around the object center", () => {
+    expect(objectRotationTransform({ ...square, rotation: 90 })).toBe(
+      "rotate(90 70 70)",
+    );
   });
 });

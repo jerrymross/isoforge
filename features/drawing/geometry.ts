@@ -2,6 +2,17 @@ import type { Point, Project, VectorObject } from "@/types/editor";
 
 export const CANVAS_VIEWBOX = { width: 640, height: 480 };
 export const TILE_CENTER: Point = { x: 320, y: 304 };
+export const ISOMETRIC_ROTATION_ANGLES = [
+  -180,
+  -153.435,
+  -90,
+  -26.565,
+  0,
+  26.565,
+  90,
+  153.435,
+  180,
+] as const;
 
 export function tileDiamond(width: number, height: number, center = TILE_CENTER): Point[] {
   return [
@@ -26,6 +37,21 @@ export function isoGridOffset(
     x: ((column - row) * tileWidth) / 2,
     y: ((column + row) * tileHeight) / 2,
   };
+}
+
+export function normalizeAngle(angle: number): number {
+  if (!Number.isFinite(angle)) return 0;
+  const normalized = ((((angle + 180) % 360) + 360) % 360) - 180;
+  return Object.is(normalized, -0) ? 0 : normalized;
+}
+
+export function snapObjectAngle(angle: number): number {
+  const normalized = normalizeAngle(angle);
+  return ISOMETRIC_ROTATION_ANGLES.reduce((closest, candidate) =>
+    Math.abs(normalized - candidate) < Math.abs(normalized - closest)
+      ? candidate
+      : closest,
+  );
 }
 
 export function snapPoint(point: Point, project: Project, threshold = 10): Point {
@@ -139,6 +165,16 @@ export function objectBounds(objects: VectorObject[]): ObjectBounds | null {
     width: Math.max(1, maxX - minX),
     height: Math.max(1, maxY - minY),
   };
+}
+
+export function objectRotationTransform(object: VectorObject): string | undefined {
+  const rotation = normalizeAngle(object.rotation ?? 0);
+  if (Math.abs(rotation) < 0.0001) return undefined;
+  const bounds = objectBounds([object]);
+  if (!bounds) return undefined;
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+  return `rotate(${rotation} ${centerX} ${centerY})`;
 }
 
 export function autoPlaceObjects(

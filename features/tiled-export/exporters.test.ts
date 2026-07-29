@@ -20,4 +20,14 @@ describe("Tiled-export", () => {
     expect(tsx).toContain('name="anchorX"');
     expect(tsx).toContain('<tileoffset');
   });
+
+  it("preserves edited object rotation in SVG export", () => {
+    const project = createDefaultProject();
+    project.tiles[0].objects[0] = {
+      ...project.tiles[0].objects[0],
+      rotation: 26.565,
+    };
+    const svg = projectToSvg(project, project.tiles[0]);
+    expect(svg).toContain('transform="rotate(26.565');
+  });
 });

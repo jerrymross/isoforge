@@ -328,6 +328,34 @@ button:disabled {
   cursor: pointer;
 }
 
+.angle-lock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 27px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: #74807d;
+  padding: 0 8px;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.angle-lock b {
+  color: #a05b39;
+}
+
+.angle-lock.active {
+  border-color: #aac4bf;
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.angle-lock.active b {
+  color: var(--teal);
+}
+
 .workspace {
   display: grid;
   grid-template-columns: 172px minmax(560px, 1fr) 340px;
@@ -1657,6 +1685,121 @@ button:disabled {
   color: #a3692d;
 }
 
+.angle-editor {
+  margin: 13px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f8f8f4;
+  padding: 9px;
+}
+
+.angle-editor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.angle-editor-heading > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #566460;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.angle-editor-heading button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 23px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: #7d8985;
+  padding: 0 7px;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.angle-editor-heading button.active {
+  border-color: #8eb1aa;
+  background: var(--teal-soft);
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.angle-input-row {
+  display: grid;
+  grid-template-columns: 54px 9px 1fr;
+  align-items: center;
+  gap: 3px;
+}
+
+.angle-input-row input[type="number"] {
+  width: 54px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 5px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+}
+
+.angle-input-row > span {
+  color: #788481;
+  font-size: 9px;
+}
+
+.angle-input-row input[type="range"] {
+  min-width: 0;
+  width: 100%;
+  accent-color: var(--coral);
+}
+
+.angle-presets {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  margin-top: 8px;
+}
+
+.angle-presets button {
+  min-width: 0;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: #75817e;
+  padding: 0;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 7px;
+  cursor: pointer;
+}
+
+.angle-presets button:hover {
+  border-color: #9aaba7;
+  color: var(--teal);
+}
+
+.angle-presets button.active {
+  border-color: var(--coral);
+  background: #fff0ea;
+  color: #bb4e31;
+  font-weight: 800;
+}
+
+.angle-editor small {
+  display: block;
+  margin-top: 7px;
+  color: #8b9692;
+  font-size: 7px;
+  line-height: 1.4;
+}
+
 .empty-copy {
   margin: 18px 14px;
   color: #84908d;
@@ -1892,6 +2035,7 @@ html[data-theme="dark"] .generator-rail {
 }
 
 html[data-theme="dark"] .workspace-mode-switch,
+html[data-theme="dark"] .angle-lock,
 html[data-theme="dark"] .generator-choice-grid button,
 html[data-theme="dark"] .template-grid button,
 html[data-theme="dark"] .generator-fields label > span,
@@ -1899,6 +2043,16 @@ html[data-theme="dark"] .material-list button.active {
   border-color: #384743;
   background: #1d2825;
   color: #d8e1de;
+}
+
+html[data-theme="dark"] .angle-lock.active {
+  border-color: #4f716b;
+  background: #243a36;
+  color: #a8d3cc;
+}
+
+html[data-theme="dark"] .angle-lock.active b {
+  color: #a8d3cc;
 }
 
 html[data-theme="dark"] .workspace-mode-switch button:hover,
@@ -2161,6 +2315,35 @@ html[data-theme="dark"] .validation-box.warning {
   color: #dfaa6d;
 }
 
+html[data-theme="dark"] .angle-editor {
+  border-color: #384743;
+  background: #18221f;
+}
+
+html[data-theme="dark"] .angle-editor-heading > span {
+  color: #c7d2ce;
+}
+
+html[data-theme="dark"] .angle-editor-heading button,
+html[data-theme="dark"] .angle-input-row input[type="number"],
+html[data-theme="dark"] .angle-presets button {
+  border-color: #384743;
+  background: #1d2825;
+  color: #abb8b4;
+}
+
+html[data-theme="dark"] .angle-editor-heading button.active {
+  border-color: #4f716b;
+  background: #243a36;
+  color: #a8d3cc;
+}
+
+html[data-theme="dark"] .angle-presets button.active {
+  border-color: #b65b43;
+  background: #35241f;
+  color: #f38a6d;
+}
+
 html[data-theme="dark"] .validation-box {
   border-color: #365847;
   background: #1d3027;
@@ -2204,6 +2387,15 @@ html[data-theme="dark"] .export-options > button:hover {
     justify-content: center;
     padding: 0;
     font-size: 0;
+  }
+  .angle-lock {
+    width: 29px;
+    justify-content: center;
+    padding: 0;
+    font-size: 0;
+  }
+  .angle-lock b {
+    display: none;
   }
   .library-section .bottom-heading > span {
     gap: 3px;

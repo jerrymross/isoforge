@@ -1,11 +1,24 @@
 "use client";
 
-import { AlertTriangle, Link2, SlidersHorizontal } from "lucide-react";
+import {
+  AlertTriangle,
+  Link2,
+  Magnet,
+  RotateCw,
+  SlidersHorizontal,
+} from "lucide-react";
 import { validateProject } from "@/features/drawing/geometry";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function Inspector() {
-  const { project, selectedObjectId, updateObject } = useEditorStore();
+  const {
+    project,
+    selectedObjectId,
+    autoAngle,
+    updateObject,
+    setObjectAngle,
+    setAutoAngle,
+  } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId)!;
   const selected = tile.objects.find((object) => object.id === selectedObjectId);
   const issues = validateProject(project);
@@ -94,6 +107,60 @@ export function Inspector() {
           }
         />
       </label>
+      <div className="angle-editor">
+        <div className="angle-editor-heading">
+          <span><RotateCw size={13} /> Vinkel</span>
+          <button
+            className={autoAngle ? "active" : ""}
+            onClick={() => setAutoAngle(!autoAngle)}
+            title="Snäpp till isometriska standardvinklar"
+          >
+            <Magnet size={12} />
+            Auto {autoAngle ? "på" : "av"}
+          </button>
+        </div>
+        <div className="angle-input-row">
+          <input
+            type="number"
+            min="-180"
+            max="180"
+            step={autoAngle ? "0.001" : "1"}
+            value={Number((selected.rotation ?? 0).toFixed(3))}
+            onChange={(event) =>
+              setObjectAngle(selected.id, Number(event.target.value))
+            }
+            aria-label="Objektets vinkel"
+          />
+          <span>°</span>
+          <input
+            type="range"
+            min="-180"
+            max="180"
+            step="1"
+            value={selected.rotation ?? 0}
+            onChange={(event) =>
+              setObjectAngle(selected.id, Number(event.target.value))
+            }
+            aria-label="Justera objektets vinkel"
+          />
+        </div>
+        <div className="angle-presets">
+          {[-90, -26.565, 0, 26.565, 90].map((angle) => (
+            <button
+              key={angle}
+              className={Math.abs((selected.rotation ?? 0) - angle) < 0.01 ? "active" : ""}
+              onClick={() => setObjectAngle(selected.id, angle)}
+            >
+              {angle > 0 ? "+" : ""}{angle}°
+            </button>
+          ))}
+        </div>
+        <small>
+          {autoAngle
+            ? "Snappar till horisontell, vertikal och isometriska riktningar."
+            : "Fri rotation i valfri vinkel."}
+        </small>
+      </div>
       <div className={issues.length ? "validation-mini warning" : "validation-mini"}>
         <AlertTriangle size={14} />
         <span>{issues.length ? `${issues.length} varning att kontrollera` : "Redo för export"}</span>

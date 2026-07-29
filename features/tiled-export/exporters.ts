@@ -1,6 +1,11 @@
 import JSZip from "jszip";
 import type { Project, Tile, VectorObject } from "@/types/editor";
-import { pointsToString, TILE_CENTER, tileDiamond } from "@/features/drawing/geometry";
+import {
+  objectRotationTransform,
+  pointsToString,
+  TILE_CENTER,
+  tileDiamond,
+} from "@/features/drawing/geometry";
 
 function escapeXml(value: string): string {
   return value
@@ -10,7 +15,7 @@ function escapeXml(value: string): string {
     .replaceAll(">", "&gt;");
 }
 
-function renderObject(object: VectorObject): string {
+function renderObjectContent(object: VectorObject): string {
   const style = `fill="${object.style.fill}" stroke="${object.style.stroke}" stroke-width="${object.style.strokeWidth}" opacity="${object.style.opacity}" stroke-linejoin="round"`;
   if (object.kind === "line") {
     const [start, end] = object.points;
@@ -42,6 +47,12 @@ function renderObject(object: VectorObject): string {
     ].join("");
   }
   return `<polygon points="${pointsToString(object.points)}" ${style}/>`;
+}
+
+function renderObject(object: VectorObject): string {
+  const content = renderObjectContent(object);
+  const transform = objectRotationTransform(object);
+  return transform ? `<g transform="${transform}">${content}</g>` : content;
 }
 
 function shade(hex: string, amount: number): string {

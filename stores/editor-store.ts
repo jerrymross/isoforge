@@ -14,6 +14,8 @@ import { saveProject } from "@/lib/project-db";
 import {
   autoPlaceObjects,
   autoSizeObjects,
+  normalizeAngle,
+  snapObjectAngle,
 } from "@/features/drawing/geometry";
 
 const now = () => new Date().toISOString();
@@ -226,6 +228,7 @@ type EditorState = {
   canvasZoom: number;
   previewMode: "single" | "grid";
   showGuides: boolean;
+  autoAngle: boolean;
   history: Project[];
   future: Project[];
   autosaveState: "saved" | "saving";
@@ -236,9 +239,11 @@ type EditorState = {
   setCanvasZoom: (zoom: number) => void;
   setPreviewMode: (mode: "single" | "grid") => void;
   toggleGuides: () => void;
+  setAutoAngle: (enabled: boolean) => void;
   addObject: (object: VectorObject) => void;
   addObjects: (objects: VectorObject[]) => void;
   updateObject: (id: string, patch: Partial<VectorObject>) => void;
+  setObjectAngle: (id: string, angle: number) => void;
   moveObject: (id: string, points: Point[]) => void;
   autoPlaceSelected: () => void;
   autoSizeSelected: () => void;
@@ -292,6 +297,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   canvasZoom: 1,
   previewMode: "single",
   showGuides: true,
+  autoAngle: true,
   history: [],
   future: [],
   autosaveState: "saved",
@@ -302,6 +308,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCanvasZoom: (canvasZoom) => set({ canvasZoom }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
+  setAutoAngle: (autoAngle) => set({ autoAngle }),
   addObject: (object) =>
     set((state) =>
       snapshot(
@@ -339,6 +346,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         })),
       ),
     ),
+  setObjectAngle: (id, angle) =>
+    set((state) => {
+      const rotation = state.autoAngle
+        ? snapObjectAngle(angle)
+        : normalizeAngle(angle);
+      return snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          objects: tile.objects.map((object) =>
+            object.id === id ? { ...object, rotation } : object,
+          ),
+        })),
+      );
+    }),
   moveObject: (id, points) =>
     set((state) => ({
       project: updateActiveTile(state.project, (tile) => ({

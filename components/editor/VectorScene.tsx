@@ -1,7 +1,12 @@
 "use client";
 
 import type { Tile, VectorObject } from "@/types/editor";
-import { pointsToString, tileDiamond, TILE_CENTER } from "@/features/drawing/geometry";
+import {
+  objectRotationTransform,
+  pointsToString,
+  tileDiamond,
+  TILE_CENTER,
+} from "@/features/drawing/geometry";
 import { shade } from "@/features/tiled-export/exporters";
 
 type VectorShapeProps = {
@@ -22,6 +27,7 @@ export function VectorShape({ object, selected, onPointerDown }: VectorShapeProp
     <g
       data-object-id={object.id}
       className={selected ? "vector-object is-selected" : "vector-object"}
+      transform={objectRotationTransform(object)}
       onPointerDown={onPointerDown}
       style={{ cursor: object.locked ? "not-allowed" : "grab" }}
     >

@@ -21,6 +21,7 @@ export type VectorObject = {
   layerId: string;
   points: Point[];
   height: number;
+  rotation?: number;
   style: VectorStyle;
   locked: boolean;
 };
