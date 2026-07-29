@@ -22,7 +22,7 @@ import { LivePreview } from "@/components/preview/LivePreview";
 import { TileLibrary } from "@/components/tiles/TileLibrary";
 import { ToolRail } from "@/components/toolbar/ToolRail";
 import { loadProject } from "@/lib/project-db";
-import { useEditorStore } from "@/stores/editor-store";
+import { normalizeProject, useEditorStore } from "@/stores/editor-store";
 import type { Tool } from "@/types/editor";
 
 const toolKeys: Record<string, Tool> = {
@@ -55,7 +55,12 @@ export function EditorShell() {
 
   useEffect(() => {
     void loadProject("default-project").then((saved) => {
-      if (saved) useEditorStore.setState({ project: saved, autosaveState: "saved" });
+      if (saved) {
+        useEditorStore.setState({
+          project: normalizeProject(saved),
+          autosaveState: "saved",
+        });
+      }
     });
   }, []);
 

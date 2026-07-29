@@ -50,9 +50,15 @@ export type Tile = {
   name: string;
   category: string;
   tags: string[];
+  collectionId: string;
   objects: VectorObject[];
   layers: Layer[];
   anchor: Anchor;
+};
+
+export type TileCollection = {
+  id: string;
+  name: string;
 };
 
 export type Project = {
@@ -64,6 +70,7 @@ export type Project = {
   canvasHeight: number;
   projection: "isometric-2-1";
   style: StyleSettings;
+  collections: TileCollection[];
   tiles: Tile[];
   activeTileId: string;
   updatedAt: string;

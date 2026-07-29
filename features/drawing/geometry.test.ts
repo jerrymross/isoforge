@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { makeIsoBox, snapIsoLine, snapPoint, tileDiamond } from "./geometry";
+import {
+  isoGridOffset,
+  makeIsoBox,
+  snapIsoLine,
+  snapPoint,
+  tileDiamond,
+} from "./geometry";
 import type { Project } from "@/types/editor";
 
 const project: Project = {
@@ -18,6 +24,7 @@ const project: Project = {
     fillColor: "#ffffff",
     lightDirection: "top-left",
   },
+  collections: [],
   tiles: [],
 };
 
@@ -40,5 +47,10 @@ describe("isometrisk geometri", () => {
 
   it("bygger sju kontrollpunkter för en box", () => {
     expect(makeIsoBox({ x: 320, y: 280 }, { x: 380, y: 310 }, 72)).toHaveLength(7);
+  });
+
+  it("placerar rader både framför och bakom i isometriskt djup", () => {
+    expect(isoGridOffset(0, -1, 128, 64)).toEqual({ x: 64, y: -32 });
+    expect(isoGridOffset(0, 1, 128, 64)).toEqual({ x: -64, y: 32 });
   });
 });

@@ -16,6 +16,18 @@ export function pointsToString(points: Point[]): string {
   return points.map((point) => `${point.x},${point.y}`).join(" ");
 }
 
+export function isoGridOffset(
+  column: number,
+  row: number,
+  tileWidth: number,
+  tileHeight: number,
+): Point {
+  return {
+    x: ((column - row) * tileWidth) / 2,
+    y: ((column + row) * tileHeight) / 2,
+  };
+}
+
 export function snapPoint(point: Point, project: Project, threshold = 10): Point {
   const diamond = tileDiamond(project.tileWidth, project.tileHeight);
   const targets = [
