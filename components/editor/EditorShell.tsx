@@ -7,9 +7,11 @@ import {
   Copy,
   Download,
   History,
+  Moon,
   Redo2,
   Save,
   Settings2,
+  Sun,
   Undo2,
 } from "lucide-react";
 import { EditorCanvas } from "./EditorCanvas";
@@ -31,6 +33,8 @@ const toolKeys: Record<string, Tool> = {
   b: "iso-box",
 };
 
+type Theme = "light" | "dark";
+
 export function EditorShell() {
   const {
     project,
@@ -47,11 +51,18 @@ export function EditorShell() {
     saveNow,
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     void loadProject("default-project").then((saved) => {
       if (saved) useEditorStore.setState({ project: saved, autosaveState: "saved" });
     });
+  }, []);
+
+  useEffect(() => {
+    const activeTheme =
+      document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    setTheme(activeTheme);
   }, []);
 
   useEffect(() => {
@@ -88,6 +99,14 @@ export function EditorShell() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [deleteSelected, duplicateSelected, redo, saveNow, setTool, undo]);
 
+  function toggleTheme() {
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+    window.localStorage.setItem("isoforge-theme", nextTheme);
+    setTheme(nextTheme);
+  }
+
   return (
     <main className="editor-shell">
       <header className="app-header">
@@ -107,6 +126,14 @@ export function EditorShell() {
           </div>
           <button aria-label="Ångra" disabled={!history.length} onClick={undo}><Undo2 size={17} /></button>
           <button aria-label="Gör om" disabled={!future.length} onClick={redo}><Redo2 size={17} /></button>
+          <button
+            className="theme-toggle"
+            aria-label={theme === "dark" ? "Använd ljust läge" : "Använd mörkt läge"}
+            title={theme === "dark" ? "Ljust läge" : "Mörkt läge"}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
           <button className="header-secondary" onClick={() => void saveNow()}><Save size={15} /> Spara</button>
           <button className="export-button" onClick={() => setExportOpen(true)}><Download size={16} /> Exportera</button>
         </div>
