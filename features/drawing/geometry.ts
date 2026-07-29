@@ -79,8 +79,8 @@ export function makeIsoBox(
   end: Point,
   height: number,
 ): VectorObject["points"] {
-  const halfWidth = Math.max(22, Math.abs(end.x - start.x));
-  const halfDepth = Math.max(12, Math.abs(end.y - start.y));
+  const halfWidth = Math.max(3, Math.abs(end.x - start.x));
+  const halfDepth = Math.max(2, Math.abs(end.y - start.y));
   const cx = start.x;
   const cy = start.y;
   return [

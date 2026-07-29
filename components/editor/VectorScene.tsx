@@ -34,6 +34,39 @@ export function VectorShape({ object, selected, onPointerDown }: VectorShapeProp
           fill="none"
           {...common}
         />
+      ) : object.kind === "iso-cylinder" && object.points.length >= 4 ? (
+        (() => {
+          const [topCenter, radiusPoint, depthPoint, bottomCenter] = object.points;
+          const radiusX = Math.abs(radiusPoint.x - topCenter.x);
+          const radiusY = Math.max(3, Math.abs(depthPoint.y - topCenter.y));
+          const left = topCenter.x - radiusX;
+          const right = topCenter.x + radiusX;
+          const bodyPath = [
+            `M ${left} ${topCenter.y}`,
+            `L ${left} ${bottomCenter.y}`,
+            `A ${radiusX} ${radiusY} 0 0 0 ${right} ${bottomCenter.y}`,
+            `L ${right} ${topCenter.y}`,
+            "Z",
+          ].join(" ");
+          return (
+            <>
+              <path d={bodyPath} fill={shade(object.style.fill, -22)} {...common} />
+              <ellipse
+                cx={topCenter.x}
+                cy={topCenter.y}
+                rx={radiusX}
+                ry={radiusY}
+                fill={shade(object.style.fill, 14)}
+                {...common}
+              />
+              <path
+                d={`M ${left} ${bottomCenter.y} A ${radiusX} ${radiusY} 0 0 0 ${right} ${bottomCenter.y}`}
+                fill="none"
+                {...common}
+              />
+            </>
+          );
+        })()
       ) : object.kind === "iso-box" && object.points.length >= 7 ? (
         <>
           <polygon

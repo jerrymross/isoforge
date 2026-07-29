@@ -2,7 +2,9 @@ export type Point = { x: number; y: number };
 
 export type Tool = "select" | "node" | "line" | "polygon" | "iso-box";
 
-export type VectorKind = "line" | "polygon" | "iso-box";
+export type WorkspaceMode = "draw" | "convert" | "objects";
+
+export type VectorKind = "line" | "polygon" | "iso-box" | "iso-cylinder";
 
 export type VectorStyle = {
   fill: string;

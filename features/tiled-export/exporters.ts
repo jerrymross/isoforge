@@ -16,6 +16,19 @@ function renderObject(object: VectorObject): string {
     const [start, end] = object.points;
     return `<line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" ${style} fill="none"/>`;
   }
+  if (object.kind === "iso-cylinder" && object.points.length >= 4) {
+    const [topCenter, radiusPoint, depthPoint, bottomCenter] = object.points;
+    const radiusX = Math.abs(radiusPoint.x - topCenter.x);
+    const radiusY = Math.max(3, Math.abs(depthPoint.y - topCenter.y));
+    const left = topCenter.x - radiusX;
+    const right = topCenter.x + radiusX;
+    const body = `M ${left} ${topCenter.y} L ${left} ${bottomCenter.y} A ${radiusX} ${radiusY} 0 0 0 ${right} ${bottomCenter.y} L ${right} ${topCenter.y} Z`;
+    return [
+      `<path d="${body}" ${style} fill="${shade(object.style.fill, -22)}"/>`,
+      `<ellipse cx="${topCenter.x}" cy="${topCenter.y}" rx="${radiusX}" ry="${radiusY}" ${style} fill="${shade(object.style.fill, 14)}"/>`,
+      `<path d="M ${left} ${bottomCenter.y} A ${radiusX} ${radiusY} 0 0 0 ${right} ${bottomCenter.y}" ${style} fill="none"/>`,
+    ].join("");
+  }
   if (object.kind === "iso-box" && object.points.length >= 7) {
     const [top, rightTop, bottomTop, leftTop, rightBottom, bottom, leftBottom] =
       object.points;

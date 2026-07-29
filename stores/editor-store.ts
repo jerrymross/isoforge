@@ -8,6 +8,7 @@ import type {
   Tile,
   Tool,
   VectorObject,
+  WorkspaceMode,
 } from "@/types/editor";
 import { saveProject } from "@/lib/project-db";
 
@@ -214,6 +215,7 @@ export function normalizeProject(project: Project): Project {
 type EditorState = {
   project: Project;
   tool: Tool;
+  workspaceMode: WorkspaceMode;
   selectedObjectId: string | null;
   selectedLayerId: string;
   zoom: number;
@@ -223,11 +225,13 @@ type EditorState = {
   future: Project[];
   autosaveState: "saved" | "saving";
   setTool: (tool: Tool) => void;
+  setWorkspaceMode: (mode: WorkspaceMode) => void;
   selectObject: (id: string | null) => void;
   setZoom: (zoom: number) => void;
   setPreviewMode: (mode: "single" | "grid") => void;
   toggleGuides: () => void;
   addObject: (object: VectorObject) => void;
+  addObjects: (objects: VectorObject[]) => void;
   updateObject: (id: string, patch: Partial<VectorObject>) => void;
   moveObject: (id: string, points: Point[]) => void;
   deleteSelected: () => void;
@@ -273,6 +277,7 @@ function snapshot(state: EditorState, next: Project): Partial<EditorState> {
 export const useEditorStore = create<EditorState>((set, get) => ({
   project: createDefaultProject(),
   tool: "select",
+  workspaceMode: "draw",
   selectedObjectId: "starter-box",
   selectedLayerId: "base",
   zoom: 1,
@@ -282,6 +287,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   future: [],
   autosaveState: "saved",
   setTool: (tool) => set({ tool }),
+  setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
   selectObject: (selectedObjectId) => set({ selectedObjectId }),
   setZoom: (zoom) => set({ zoom }),
   setPreviewMode: (previewMode) => set({ previewMode }),
@@ -296,6 +302,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         })),
       ),
     ),
+  addObjects: (objects) =>
+    set((state) => {
+      if (!objects.length) return state;
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (tile) => ({
+            ...tile,
+            objects: [...tile.objects, ...objects],
+          })),
+        ),
+        selectedObjectId: objects.at(-1)?.id ?? null,
+        selectedLayerId: objects.at(-1)?.layerId ?? state.selectedLayerId,
+      };
+    }),
   updateObject: (id, patch) =>
     set((state) =>
       snapshot(

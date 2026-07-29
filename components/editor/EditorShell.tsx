@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 import {
+  Boxes,
   Check,
   ChevronDown,
   Copy,
   Download,
   History,
   Moon,
+  PencilRuler,
   Redo2,
   Save,
   Settings2,
   Sun,
   Undo2,
+  WandSparkles,
 } from "lucide-react";
 import { EditorCanvas } from "./EditorCanvas";
 import { Inspector } from "./Inspector";
@@ -21,6 +24,7 @@ import { LayerPanel } from "@/components/layers/LayerPanel";
 import { LivePreview } from "@/components/preview/LivePreview";
 import { TileLibrary } from "@/components/tiles/TileLibrary";
 import { ToolRail } from "@/components/toolbar/ToolRail";
+import { GeneratorPanel } from "@/components/toolbar/GeneratorPanel";
 import { loadProject } from "@/lib/project-db";
 import { normalizeProject, useEditorStore } from "@/stores/editor-store";
 import type { Tool } from "@/types/editor";
@@ -38,12 +42,14 @@ type Theme = "light" | "dark";
 export function EditorShell() {
   const {
     project,
+    workspaceMode,
     autosaveState,
     history,
     future,
     setProjectName,
     setTileSize,
     setTool,
+    setWorkspaceMode,
     undo,
     redo,
     deleteSelected,
@@ -145,6 +151,27 @@ export function EditorShell() {
       </header>
 
       <div className="context-bar">
+        <div className="workspace-mode-switch" aria-label="Arbetsläge">
+          <button
+            className={workspaceMode === "draw" ? "active" : ""}
+            onClick={() => setWorkspaceMode("draw")}
+          >
+            <PencilRuler size={13} /> Rita
+          </button>
+          <button
+            className={workspaceMode === "convert" ? "active" : ""}
+            onClick={() => setWorkspaceMode("convert")}
+          >
+            <WandSparkles size={13} /> 2D → ISO
+          </button>
+          <button
+            className={workspaceMode === "objects" ? "active" : ""}
+            onClick={() => setWorkspaceMode("objects")}
+          >
+            <Boxes size={13} /> Objekt
+          </button>
+        </div>
+        <span className="context-divider" />
         <label>
           Tileformat
           <select
@@ -169,7 +196,11 @@ export function EditorShell() {
       </div>
 
       <div className="workspace">
-        <ToolRail />
+        {workspaceMode === "draw" ? (
+          <ToolRail />
+        ) : (
+          <GeneratorPanel mode={workspaceMode} />
+        )}
         <div className="center-stack">
           <EditorCanvas />
           <div className="bottom-dock">
