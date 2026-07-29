@@ -731,6 +731,62 @@ button:disabled {
   background: #56a17c;
 }
 
+.canvas-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.smart-layout-actions,
+.canvas-zoom-control {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+}
+
+.smart-layout-actions button,
+.canvas-zoom-control button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 27px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: #687673;
+  padding: 0 7px;
+  font-size: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.smart-layout-actions button:last-child,
+.canvas-zoom-control button:last-child {
+  border-right: 0;
+}
+
+.smart-layout-actions button:hover,
+.canvas-zoom-control button:hover {
+  background: #eef1ed;
+  color: var(--teal);
+}
+
+.canvas-zoom-control button {
+  width: 27px;
+  padding: 0;
+}
+
+.canvas-zoom-control .zoom-value {
+  width: 42px;
+  color: var(--ink);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+}
+
 .canvas-wrap {
   position: relative;
   min-height: 0;
@@ -1958,6 +2014,8 @@ html[data-theme="dark"] .layer-row.active {
 
 html[data-theme="dark"] .context-bar select,
 html[data-theme="dark"] .canvas-status > span,
+html[data-theme="dark"] .smart-layout-actions,
+html[data-theme="dark"] .canvas-zoom-control,
 html[data-theme="dark"] .mini-search,
 html[data-theme="dark"] .library-actions > button,
 html[data-theme="dark"] .tile-card,
@@ -1970,6 +2028,22 @@ html[data-theme="dark"] .dialog-heading > button {
   border-color: #384743;
   background: #1d2825;
   color: #d8e1de;
+}
+
+html[data-theme="dark"] .smart-layout-actions button,
+html[data-theme="dark"] .canvas-zoom-control button {
+  border-color: #384743;
+  color: #aab7b3;
+}
+
+html[data-theme="dark"] .smart-layout-actions button:hover,
+html[data-theme="dark"] .canvas-zoom-control button:hover {
+  background: #26322f;
+  color: #a8d3cc;
+}
+
+html[data-theme="dark"] .canvas-zoom-control .zoom-value {
+  color: #e1e8e5;
 }
 
 html[data-theme="dark"] .move-collection select,
@@ -2118,6 +2192,11 @@ html[data-theme="dark"] .export-options > button:hover {
   .tool-button { grid-template-columns: 21px minmax(0, 1fr); }
   .tool-button kbd,
   .canvas-status span:nth-child(2) { display: none; }
+  .smart-layout-actions button {
+    width: 29px;
+    padding: 0;
+    font-size: 0;
+  }
   .context-bar { gap: 10px; }
   .context-bar > div:nth-of-type(3) { display: none; }
   .workspace-mode-switch button {

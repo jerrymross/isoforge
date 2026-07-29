@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  autoPlaceObjects,
+  autoSizeObjects,
   isoGridOffset,
   makeIsoBox,
   snapIsoLine,
@@ -7,6 +9,7 @@ import {
   tileDiamond,
 } from "./geometry";
 import type { Project } from "@/types/editor";
+import type { VectorObject } from "@/types/editor";
 
 const project: Project = {
   id: "test",
@@ -26,6 +29,28 @@ const project: Project = {
   },
   collections: [],
   tiles: [],
+};
+
+const square: VectorObject = {
+  id: "square",
+  name: "Square",
+  kind: "polygon",
+  layerId: "base",
+  points: [
+    { x: 20, y: 20 },
+    { x: 120, y: 20 },
+    { x: 120, y: 120 },
+    { x: 20, y: 120 },
+  ],
+  height: 0,
+  style: {
+    fill: "#ffffff",
+    stroke: "#000000",
+    strokeWidth: 2,
+    opacity: 1,
+    shadow: false,
+  },
+  locked: false,
 };
 
 describe("isometrisk geometri", () => {
@@ -52,5 +77,25 @@ describe("isometrisk geometri", () => {
   it("placerar rader både framför och bakom i isometriskt djup", () => {
     expect(isoGridOffset(0, -1, 128, 64)).toEqual({ x: 64, y: -32 });
     expect(isoGridOffset(0, 1, 128, 64)).toEqual({ x: -64, y: 32 });
+  });
+
+  it("autoplacerar gruppen centrerat mot baslinjen", () => {
+    const [placed] = autoPlaceObjects([square], 320, 336);
+    expect(placed.points[0]).toEqual({ x: 270, y: 236 });
+    expect(placed.points[2]).toEqual({ x: 370, y: 336 });
+  });
+
+  it("autoanpassar proportionellt utan att förvränga formen", () => {
+    const [sized] = autoSizeObjects([square], {
+      centerX: 320,
+      baseline: 336,
+      maxWidth: 200,
+      maxHeight: 100,
+    });
+    const width = sized.points[1].x - sized.points[0].x;
+    const height = sized.points[3].y - sized.points[0].y;
+    expect(width).toBe(100);
+    expect(height).toBe(100);
+    expect(sized.points[2].y).toBe(336);
   });
 });

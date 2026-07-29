@@ -11,6 +11,10 @@ import type {
   WorkspaceMode,
 } from "@/types/editor";
 import { saveProject } from "@/lib/project-db";
+import {
+  autoPlaceObjects,
+  autoSizeObjects,
+} from "@/features/drawing/geometry";
 
 const now = () => new Date().toISOString();
 const newId = () => crypto.randomUUID();
@@ -219,6 +223,7 @@ type EditorState = {
   selectedObjectId: string | null;
   selectedLayerId: string;
   zoom: number;
+  canvasZoom: number;
   previewMode: "single" | "grid";
   showGuides: boolean;
   history: Project[];
@@ -228,12 +233,15 @@ type EditorState = {
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   selectObject: (id: string | null) => void;
   setZoom: (zoom: number) => void;
+  setCanvasZoom: (zoom: number) => void;
   setPreviewMode: (mode: "single" | "grid") => void;
   toggleGuides: () => void;
   addObject: (object: VectorObject) => void;
   addObjects: (objects: VectorObject[]) => void;
   updateObject: (id: string, patch: Partial<VectorObject>) => void;
   moveObject: (id: string, points: Point[]) => void;
+  autoPlaceSelected: () => void;
+  autoSizeSelected: () => void;
   deleteSelected: () => void;
   duplicateSelected: () => void;
   toggleLayer: (id: string, field: "visible" | "locked") => void;
@@ -281,6 +289,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedObjectId: "starter-box",
   selectedLayerId: "base",
   zoom: 1,
+  canvasZoom: 1,
   previewMode: "single",
   showGuides: true,
   history: [],
@@ -290,6 +299,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
   selectObject: (selectedObjectId) => set({ selectedObjectId }),
   setZoom: (zoom) => set({ zoom }),
+  setCanvasZoom: (canvasZoom) => set({ canvasZoom }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
   addObject: (object) =>
@@ -339,6 +349,64 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       })),
       autosaveState: "saving",
     })),
+  autoPlaceSelected: () =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      if (!tile) return state;
+      const targets = tile.objects.filter(
+        (object) =>
+          !object.locked &&
+          (!state.selectedObjectId || object.id === state.selectedObjectId),
+      );
+      if (!targets.length) return state;
+      const placed = new Map(
+        autoPlaceObjects(targets, 320, tile.anchor.baseline).map((object) => [
+          object.id,
+          object,
+        ]),
+      );
+      return snapshot(
+        state,
+        updateActiveTile(state.project, (activeTile) => ({
+          ...activeTile,
+          objects: activeTile.objects.map(
+            (object) => placed.get(object.id) ?? object,
+          ),
+        })),
+      );
+    }),
+  autoSizeSelected: () =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      if (!tile) return state;
+      const targets = tile.objects.filter(
+        (object) =>
+          !object.locked &&
+          (!state.selectedObjectId || object.id === state.selectedObjectId),
+      );
+      if (!targets.length) return state;
+      const sized = new Map(
+        autoSizeObjects(targets, {
+          centerX: 320,
+          baseline: tile.anchor.baseline,
+          maxWidth: Math.max(64, state.project.canvasWidth * 1.8),
+          maxHeight: Math.max(96, state.project.canvasHeight - 20),
+        }).map((object) => [object.id, object]),
+      );
+      return snapshot(
+        state,
+        updateActiveTile(state.project, (activeTile) => ({
+          ...activeTile,
+          objects: activeTile.objects.map(
+            (object) => sized.get(object.id) ?? object,
+          ),
+        })),
+      );
+    }),
   deleteSelected: () =>
     set((state) => {
       if (!state.selectedObjectId) return state;

@@ -101,6 +101,86 @@ export function translateObject(object: VectorObject, dx: number, dy: number): V
   };
 }
 
+export type ObjectBounds = {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  width: number;
+  height: number;
+};
+
+export function objectBounds(objects: VectorObject[]): ObjectBounds | null {
+  const points = objects.flatMap((object) => {
+    if (object.kind !== "iso-cylinder" || object.points.length < 4) {
+      return object.points;
+    }
+    const [topCenter, radiusPoint, depthPoint, bottomCenter] = object.points;
+    const radiusX = Math.abs(radiusPoint.x - topCenter.x);
+    const radiusY = Math.max(3, Math.abs(depthPoint.y - topCenter.y));
+    return [
+      ...object.points,
+      { x: topCenter.x - radiusX, y: topCenter.y - radiusY },
+      { x: topCenter.x + radiusX, y: topCenter.y + radiusY },
+      { x: bottomCenter.x - radiusX, y: bottomCenter.y - radiusY },
+      { x: bottomCenter.x + radiusX, y: bottomCenter.y + radiusY },
+    ];
+  });
+  if (!points.length) return null;
+  const minX = Math.min(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const maxY = Math.max(...points.map((point) => point.y));
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: Math.max(1, maxX - minX),
+    height: Math.max(1, maxY - minY),
+  };
+}
+
+export function autoPlaceObjects(
+  objects: VectorObject[],
+  centerX = TILE_CENTER.x,
+  baseline = TILE_CENTER.y + 32,
+): VectorObject[] {
+  const bounds = objectBounds(objects);
+  if (!bounds) return objects;
+  const dx = centerX - (bounds.minX + bounds.maxX) / 2;
+  const dy = baseline - bounds.maxY;
+  return objects.map((object) => translateObject(object, dx, dy));
+}
+
+export function autoSizeObjects(
+  objects: VectorObject[],
+  options: {
+    centerX?: number;
+    baseline?: number;
+    maxWidth?: number;
+    maxHeight?: number;
+  } = {},
+): VectorObject[] {
+  const bounds = objectBounds(objects);
+  if (!bounds) return objects;
+  const centerX = options.centerX ?? TILE_CENTER.x;
+  const baseline = options.baseline ?? TILE_CENTER.y + 32;
+  const maxWidth = options.maxWidth ?? 232;
+  const maxHeight = options.maxHeight ?? 196;
+  const scale = Math.min(maxWidth / bounds.width, maxHeight / bounds.height);
+  const targetLeft = centerX - (bounds.width * scale) / 2;
+  const targetTop = baseline - bounds.height * scale;
+  return objects.map((object) => ({
+    ...object,
+    height: object.height * scale,
+    points: object.points.map((point) => ({
+      x: targetLeft + (point.x - bounds.minX) * scale,
+      y: targetTop + (point.y - bounds.minY) * scale,
+    })),
+  }));
+}
+
 export function validateProject(project: Project): string[] {
   const tile = project.tiles.find((item) => item.id === project.activeTileId);
   if (!tile) return ["Aktiv tile saknas"];

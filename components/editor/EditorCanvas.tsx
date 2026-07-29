@@ -1,17 +1,37 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Crosshair, Maximize2, Minus, Plus } from "lucide-react";
 import { makeIsoBox, snapIsoLine, snapPoint } from "@/features/drawing/geometry";
 import { useEditorStore } from "@/stores/editor-store";
 import type { Point, VectorObject } from "@/types/editor";
 import { GuideLayer, VectorShape } from "./VectorScene";
 
-function eventPoint(event: React.PointerEvent<SVGSVGElement>): Point {
-  const rect = event.currentTarget.getBoundingClientRect();
+type CanvasViewBox = { x: number; y: number; width: number; height: number };
+
+function clientPoint(
+  svg: SVGSVGElement,
+  clientX: number,
+  clientY: number,
+  viewBox: CanvasViewBox,
+): Point {
+  const rect = svg.getBoundingClientRect();
   return {
-    x: ((event.clientX - rect.left) / rect.width) * 640,
-    y: ((event.clientY - rect.top) / rect.height) * 480,
+    x: viewBox.x + ((clientX - rect.left) / rect.width) * viewBox.width,
+    y: viewBox.y + ((clientY - rect.top) / rect.height) * viewBox.height,
   };
+}
+
+function eventPoint(
+  event: React.PointerEvent<SVGSVGElement>,
+  viewBox: CanvasViewBox,
+): Point {
+  return clientPoint(
+    event.currentTarget,
+    event.clientX,
+    event.clientY,
+    viewBox,
+  );
 }
 
 export function EditorCanvas() {
@@ -21,15 +41,25 @@ export function EditorCanvas() {
     selectedObjectId,
     selectedLayerId,
     showGuides,
+    canvasZoom,
     selectObject,
     addObject,
     moveObject,
+    setCanvasZoom,
+    autoPlaceSelected,
+    autoSizeSelected,
   } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId)!;
   const [start, setStart] = useState<Point | null>(null);
   const [draft, setDraft] = useState<Point[] | null>(null);
   const [angle, setAngle] = useState<number | null>(null);
   const dragRef = useRef<{ id: string; start: Point; points: Point[] } | null>(null);
+  const viewBox: CanvasViewBox = {
+    width: 640 / canvasZoom,
+    height: 480 / canvasZoom,
+    x: 320 - 320 / canvasZoom,
+    y: 240 - 240 / canvasZoom,
+  };
 
   const visibleObjects = tile.objects.filter((object) => {
     const layer = tile.layers.find((item) => item.id === object.layerId);
@@ -39,7 +69,7 @@ export function EditorCanvas() {
   function beginCanvas(event: React.PointerEvent<SVGSVGElement>) {
     if (event.button !== 0) return;
     if (event.target !== event.currentTarget && tool === "select") return;
-    const point = snapPoint(eventPoint(event), project);
+    const point = snapPoint(eventPoint(event, viewBox), project);
     event.currentTarget.setPointerCapture(event.pointerId);
     if (tool === "select") {
       selectObject(null);
@@ -50,7 +80,7 @@ export function EditorCanvas() {
   }
 
   function moveCanvas(event: React.PointerEvent<SVGSVGElement>) {
-    const point = eventPoint(event);
+    const point = eventPoint(event, viewBox);
     if (dragRef.current) {
       const dx = point.x - dragRef.current.start.x;
       const dy = point.y - dragRef.current.start.y;
@@ -122,11 +152,7 @@ export function EditorCanvas() {
     if (tool !== "select" || object.locked) return;
     const svg = event.currentTarget.ownerSVGElement;
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    const point = {
-      x: ((event.clientX - rect.left) / rect.width) * 640,
-      y: ((event.clientY - rect.top) / rect.height) * 480,
-    };
+    const point = clientPoint(svg, event.clientX, event.clientY, viewBox);
     dragRef.current = { id: object.id, start: point, points: object.points };
     svg.setPointerCapture(event.pointerId);
   }
@@ -138,21 +164,62 @@ export function EditorCanvas() {
           <span className="eyebrow">VEKTORRITYTA</span>
           <strong>{tile.name}</strong>
         </div>
-        <div className="canvas-status">
-          <span>2:1 ISO</span>
-          <span>128 × 192</span>
-          <span className="status-dot">Snapping aktiv</span>
+        <div className="canvas-header-actions">
+          <div className="smart-layout-actions">
+            <button
+              title={selectedObjectId ? "Centrera markeringen på baslinjen" : "Centrera hela tilen på baslinjen"}
+              disabled={!tile.objects.length}
+              onClick={autoPlaceSelected}
+            >
+              <Crosshair size={13} /> Autoplacera
+            </button>
+            <button
+              title={selectedObjectId ? "Skala markeringen till exportytan" : "Skala hela tilen till exportytan"}
+              disabled={!tile.objects.length}
+              onClick={autoSizeSelected}
+            >
+              <Maximize2 size={13} /> Autoanpassa
+            </button>
+          </div>
+          <div className="canvas-zoom-control">
+            <button
+              aria-label="Zooma ut ritytan"
+              onClick={() => setCanvasZoom(Math.max(0.5, canvasZoom - 0.25))}
+            >
+              <Minus size={13} />
+            </button>
+            <button
+              className="zoom-value"
+              title="Återställ till 100 %"
+              onClick={() => setCanvasZoom(1)}
+            >
+              {Math.round(canvasZoom * 100)}%
+            </button>
+            <button
+              aria-label="Zooma in ritytan"
+              onClick={() => setCanvasZoom(Math.min(3, canvasZoom + 0.25))}
+            >
+              <Plus size={13} />
+            </button>
+          </div>
         </div>
       </div>
       <div className="canvas-wrap">
         <svg
           className="drawing-canvas"
-          viewBox="0 0 640 480"
+          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
           role="img"
           aria-label="Isometrisk SVG-rityta"
           onPointerDown={beginCanvas}
           onPointerMove={moveCanvas}
           onPointerUp={endCanvas}
+          onWheel={(event) => {
+            event.preventDefault();
+            const step = event.deltaY < 0 ? 0.1 : -0.1;
+            setCanvasZoom(
+              Math.max(0.5, Math.min(3, Number((canvasZoom + step).toFixed(2)))),
+            );
+          }}
           onPointerCancel={() => {
             setStart(null);
             setDraft(null);
@@ -167,8 +234,8 @@ export function EditorCanvas() {
               <feDropShadow dx="0" dy="8" stdDeviation="8" floodOpacity=".18" />
             </filter>
           </defs>
-          <rect width="640" height="480" className="canvas-bg" />
-          <rect width="640" height="480" fill="url(#micro-grid)" pointerEvents="none" />
+          <rect x="-640" y="-480" width="1920" height="1440" className="canvas-bg" pointerEvents="none" />
+          <rect x="-640" y="-480" width="1920" height="1440" fill="url(#micro-grid)" pointerEvents="none" />
           {showGuides && (
             <GuideLayer
               tile={tile}
