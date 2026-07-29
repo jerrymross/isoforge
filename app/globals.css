@@ -503,6 +503,175 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.collision-intro,
+.collision-export-note {
+  margin: 10px;
+  color: #788581;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.collision-shape-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin: 0 8px 11px;
+}
+
+.collision-shape-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  height: 45px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: #687572;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.collision-shape-grid button:hover {
+  border-color: #e08a71;
+  color: #bd5438;
+}
+
+.collision-master-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--teal-soft);
+  padding: 8px;
+  color: var(--teal);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.collision-master-toggle > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.collision-master-toggle input {
+  accent-color: var(--teal);
+}
+
+.collision-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0 8px;
+}
+
+.collision-list > button {
+  display: grid;
+  grid-template-columns: 1fr 24px;
+  align-items: center;
+  min-height: 31px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: #64716e;
+  padding: 0 3px 0 8px;
+  font-size: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collision-list > button.active {
+  border-color: #e08a71;
+  background: #fff0ea;
+  color: #b44d32;
+  font-weight: 700;
+}
+
+.collision-list i {
+  display: grid;
+  place-items: center;
+  height: 24px;
+  font-style: normal;
+}
+
+.collision-list p {
+  margin: 5px 2px;
+  color: #909a97;
+  font-size: 8px;
+}
+
+.collision-editor {
+  margin: 11px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f5f5f1;
+  padding: 8px;
+}
+
+.collision-editor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 9px;
+}
+
+.collision-editor-heading button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #edc0b4;
+  border-radius: 5px;
+  background: #fff;
+  color: #c45439;
+  cursor: pointer;
+}
+
+.collision-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.collision-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #7b8783;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.collision-fields input {
+  min-width: 0;
+  width: 100%;
+  height: 27px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 5px;
+  font-size: 8px;
+}
+
+.collision-editor small {
+  display: block;
+  margin-top: 7px;
+  color: #8d9894;
+  font-size: 7px;
+}
+
+.collision-export-note {
+  border-left: 2px solid #e08a71;
+  padding-left: 7px;
+}
+
 .generator-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -853,6 +1022,43 @@ button:disabled {
 
 .vector-object.is-selected {
   filter: drop-shadow(0 2px 5px rgba(238, 106, 71, 0.18));
+}
+
+.collision-shape {
+  cursor: pointer;
+}
+
+.collision-shape polygon,
+.collision-shape ellipse {
+  fill: rgba(238, 106, 71, 0.2);
+  stroke: #e95739;
+  stroke-width: 1.7;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.collision-shape.is-selected polygon,
+.collision-shape.is-selected ellipse {
+  fill: rgba(238, 106, 71, 0.3);
+  stroke-width: 2.4;
+}
+
+.collision-node {
+  fill: #fffaf0;
+  stroke: #e95739;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.collision-shape.is-compact {
+  pointer-events: none;
+}
+
+.collision-shape.is-compact polygon,
+.collision-shape.is-compact ellipse {
+  fill: rgba(238, 106, 71, 0.12);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
 }
 
 .angle-chip {
@@ -1337,7 +1543,7 @@ button:disabled {
 
 .preview-panel {
   display: grid;
-  grid-template-rows: 50px minmax(220px, 1fr) 142px;
+  grid-template-rows: 50px minmax(220px, 1fr) 166px;
   overflow: hidden;
 }
 
@@ -2038,11 +2244,34 @@ html[data-theme="dark"] .workspace-mode-switch,
 html[data-theme="dark"] .angle-lock,
 html[data-theme="dark"] .generator-choice-grid button,
 html[data-theme="dark"] .template-grid button,
+html[data-theme="dark"] .collision-shape-grid button,
+html[data-theme="dark"] .collision-list > button,
+html[data-theme="dark"] .collision-editor,
+html[data-theme="dark"] .collision-editor-heading button,
+html[data-theme="dark"] .collision-fields input,
 html[data-theme="dark"] .generator-fields label > span,
 html[data-theme="dark"] .material-list button.active {
   border-color: #384743;
   background: #1d2825;
   color: #d8e1de;
+}
+
+html[data-theme="dark"] .collision-list > button.active {
+  border-color: #a9543d;
+  background: #35241f;
+  color: #f08a6d;
+}
+
+html[data-theme="dark"] .collision-master-toggle {
+  border-color: #384743;
+  background: #243a36;
+  color: #a8d3cc;
+}
+
+html[data-theme="dark"] .collision-shape polygon,
+html[data-theme="dark"] .collision-shape ellipse {
+  fill: rgba(242, 115, 78, 0.2);
+  stroke: #f27a58;
 }
 
 html[data-theme="dark"] .angle-lock.active {
@@ -2428,5 +2657,5 @@ html[data-theme="dark"] .export-options > button:hover {
   .tile-strip { height: 119px; }
   .tile-strip { padding-top: 7px; }
   .tile-card { grid-template-rows: 50px auto auto; }
-  .preview-panel { grid-template-rows: 46px minmax(190px, 1fr) 132px; }
+  .preview-panel { grid-template-rows: 46px minmax(190px, 1fr) 154px; }
 }

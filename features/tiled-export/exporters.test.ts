@@ -19,6 +19,9 @@ describe("Tiled-export", () => {
     expect(tsx).toContain('tileheight="64"');
     expect(tsx).toContain('name="anchorX"');
     expect(tsx).toContain('<tileoffset');
+    expect(tsx).toContain('<objectgroup name="collision">');
+    expect(tsx).toContain('name="collisionCount" type="int" value="1"');
+    expect(tsx).toContain("<polygon");
   });
 
   it("preserves edited object rotation in SVG export", () => {

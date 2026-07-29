@@ -1,4 +1,5 @@
 import type { Point, Project, VectorObject } from "@/types/editor";
+import { isValidCollision } from "@/features/collision/collision";
 
 export const CANVAS_VIEWBOX = { width: 640, height: 480 };
 export const TILE_CENTER: Point = { x: 320, y: 304 };
@@ -237,6 +238,11 @@ export function validateProject(project: Project): string[] {
       )
     ) {
       issues.push(`${object.name} ligger utanför exportytan`);
+    }
+  }
+  for (const collision of tile.collisions) {
+    if (!isValidCollision(collision)) {
+      issues.push(`${collision.name} är inte en giltig kollisionsform`);
     }
   }
   return issues;

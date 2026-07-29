@@ -2,6 +2,8 @@
 
 import { create } from "zustand";
 import type {
+  CollisionKind,
+  CollisionShape,
   Layer,
   Point,
   Project,
@@ -10,6 +12,11 @@ import type {
   VectorObject,
   WorkspaceMode,
 } from "@/types/editor";
+import {
+  createCollisionShape,
+  resizeCollision,
+  type CollisionBounds,
+} from "@/features/collision/collision";
 import { saveProject } from "@/lib/project-db";
 import {
   autoPlaceObjects,
@@ -103,6 +110,20 @@ export function createDefaultProject(): Project {
         tags: ["bageri", "metall"],
         collectionId: "collection-bakery",
         layers,
+        collisions: [
+          {
+            id: "workbench-collision",
+            name: "Bas",
+            kind: "diamond",
+            points: [
+              { x: 320, y: 261 },
+              { x: 390, y: 296 },
+              { x: 320, y: 331 },
+              { x: 250, y: 296 },
+            ],
+            enabled: true,
+          },
+        ],
         objects: [
           {
             id: "starter-box",
@@ -138,6 +159,7 @@ export function createDefaultProject(): Project {
         tags: ["sten", "sömlös"],
         collectionId: "collection-architecture",
         layers: defaultLayers(),
+        collisions: [],
         objects: [
           {
             id: "floor-diamond",
@@ -170,6 +192,7 @@ export function createDefaultProject(): Project {
         tags: ["vägg", "puts"],
         collectionId: "collection-architecture",
         layers: defaultLayers(),
+        collisions: [],
         objects: [sampleBox("wall-box", "Väggsektion", "#d4c7ad", 116, 64, 12)],
         anchor: defaultAnchor(),
       },
@@ -180,6 +203,7 @@ export function createDefaultProject(): Project {
         tags: ["bageri", "ugn"],
         collectionId: "collection-bakery",
         layers: defaultLayers(),
+        collisions: [],
         objects: [sampleBox("oven-box", "Ugn", "#9f6853", 92, 52, 28)],
         anchor: defaultAnchor(),
       },
@@ -193,7 +217,7 @@ export function normalizeProject(project: Project): Project {
   const fallback = createDefaultProject();
   const legacy = project as Project & {
     collections?: Project["collections"];
-    tiles: Array<Tile & { collectionId?: string }>;
+    tiles: Array<Tile & { collectionId?: string; collisions?: CollisionShape[] }>;
   };
   if (legacy.collections?.length) {
     return {
@@ -201,6 +225,7 @@ export function normalizeProject(project: Project): Project {
       tiles: legacy.tiles.map((tile) => ({
         ...tile,
         collectionId: tile.collectionId ?? legacy.collections![0].id,
+        collisions: tile.collisions ?? [],
       })),
     };
   }
@@ -212,6 +237,7 @@ export function normalizeProject(project: Project): Project {
       ...legacy.tiles.map((tile) => ({
         ...tile,
         collectionId: "collection-bakery",
+        collisions: tile.collisions ?? [],
       })),
       ...fallback.tiles.filter((tile) => !existingIds.has(tile.id)),
     ],
@@ -223,11 +249,13 @@ type EditorState = {
   tool: Tool;
   workspaceMode: WorkspaceMode;
   selectedObjectId: string | null;
+  selectedCollisionId: string | null;
   selectedLayerId: string;
   zoom: number;
   canvasZoom: number;
   previewMode: "single" | "grid";
   showGuides: boolean;
+  showCollisions: boolean;
   autoAngle: boolean;
   history: Project[];
   future: Project[];
@@ -235,16 +263,22 @@ type EditorState = {
   setTool: (tool: Tool) => void;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
   selectObject: (id: string | null) => void;
+  selectCollision: (id: string | null) => void;
   setZoom: (zoom: number) => void;
   setCanvasZoom: (zoom: number) => void;
   setPreviewMode: (mode: "single" | "grid") => void;
   toggleGuides: () => void;
+  setShowCollisions: (visible: boolean) => void;
   setAutoAngle: (enabled: boolean) => void;
   addObject: (object: VectorObject) => void;
   addObjects: (objects: VectorObject[]) => void;
   updateObject: (id: string, patch: Partial<VectorObject>) => void;
   setObjectAngle: (id: string, angle: number) => void;
   moveObject: (id: string, points: Point[]) => void;
+  addCollision: (kind: CollisionKind) => void;
+  updateCollisionBounds: (id: string, patch: Partial<CollisionBounds>) => void;
+  toggleCollision: (id: string) => void;
+  deleteCollision: (id: string) => void;
   autoPlaceSelected: () => void;
   autoSizeSelected: () => void;
   deleteSelected: () => void;
@@ -292,22 +326,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   tool: "select",
   workspaceMode: "draw",
   selectedObjectId: "starter-box",
+  selectedCollisionId: "workbench-collision",
   selectedLayerId: "base",
   zoom: 1,
   canvasZoom: 1,
   previewMode: "single",
   showGuides: true,
+  showCollisions: false,
   autoAngle: true,
   history: [],
   future: [],
   autosaveState: "saved",
   setTool: (tool) => set({ tool }),
-  setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
-  selectObject: (selectedObjectId) => set({ selectedObjectId }),
+  setWorkspaceMode: (workspaceMode) =>
+    set({ workspaceMode, showCollisions: workspaceMode === "collision" }),
+  selectObject: (selectedObjectId) =>
+    set({ selectedObjectId, selectedCollisionId: null }),
+  selectCollision: (selectedCollisionId) =>
+    set({ selectedCollisionId, selectedObjectId: null }),
   setZoom: (zoom) => set({ zoom }),
   setCanvasZoom: (canvasZoom) => set({ canvasZoom }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
+  setShowCollisions: (showCollisions) => set({ showCollisions }),
   setAutoAngle: (autoAngle) => set({ autoAngle }),
   addObject: (object) =>
     set((state) =>
@@ -370,6 +411,60 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ),
       })),
       autosaveState: "saving",
+    })),
+  addCollision: (kind) =>
+    set((state) => {
+      const collision = createCollisionShape(kind);
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (tile) => ({
+            ...tile,
+            collisions: [...tile.collisions, collision],
+          })),
+        ),
+        selectedCollisionId: collision.id,
+        selectedObjectId: null,
+        showCollisions: true,
+      };
+    }),
+  updateCollisionBounds: (id, patch) =>
+    set((state) =>
+      snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          collisions: tile.collisions.map((collision) =>
+            collision.id === id ? resizeCollision(collision, patch) : collision,
+          ),
+        })),
+      ),
+    ),
+  toggleCollision: (id) =>
+    set((state) =>
+      snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          collisions: tile.collisions.map((collision) =>
+            collision.id === id
+              ? { ...collision, enabled: !collision.enabled }
+              : collision,
+          ),
+        })),
+      ),
+    ),
+  deleteCollision: (id) =>
+    set((state) => ({
+      ...snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          collisions: tile.collisions.filter((collision) => collision.id !== id),
+        })),
+      ),
+      selectedCollisionId:
+        state.selectedCollisionId === id ? null : state.selectedCollisionId,
     })),
   autoPlaceSelected: () =>
     set((state) => {
@@ -503,6 +598,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return {
         project: { ...state.project, activeTileId: id },
         selectedObjectId: tile.objects[0]?.id ?? null,
+        selectedCollisionId: tile.collisions[0]?.id ?? null,
         selectedLayerId: tile.objects[0]?.layerId ?? tile.layers[0]?.id ?? "base",
       };
     }),
@@ -516,6 +612,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         collectionId,
         layers: defaultLayers(),
         objects: [],
+        collisions: [],
         anchor: defaultAnchor(),
       };
       return {
@@ -526,6 +623,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: null,
+        selectedCollisionId: null,
         selectedLayerId: "base",
         tool: "iso-box",
       };
@@ -545,6 +643,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           points: object.points.map((point) => ({ ...point })),
           style: { ...object.style },
         })),
+        collisions: source.collisions.map((collision) => ({
+          ...collision,
+          id: newId(),
+          points: collision.points.map((point) => ({ ...point })),
+        })),
         anchor: {
           image: { ...source.anchor.image },
           tile: { ...source.anchor.tile },
@@ -560,6 +663,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: tile.objects[0]?.id ?? null,
+        selectedCollisionId: tile.collisions[0]?.id ?? null,
       };
     }),
   deleteTile: (id) =>
@@ -577,6 +681,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: active.objects[0]?.id ?? null,
+        selectedCollisionId: active.collisions[0]?.id ?? null,
       };
     }),
   createCollection: (name) =>
@@ -615,6 +720,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           id: newId(),
           points: object.points.map((point) => ({ ...point })),
           style: { ...object.style },
+        })),
+        collisions: (tile.collisions ?? []).map((collision) => ({
+          ...collision,
+          id: newId(),
+          points: collision.points.map((point) => ({ ...point })),
         })),
         anchor: tile.anchor ?? defaultAnchor(),
       }));

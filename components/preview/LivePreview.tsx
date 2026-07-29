@@ -10,7 +10,11 @@ import {
 } from "@/features/drawing/geometry";
 import { useEditorStore } from "@/stores/editor-store";
 import type { Tile } from "@/types/editor";
-import { GuideLayer, VectorShape } from "@/components/editor/VectorScene";
+import {
+  CollisionShapeView,
+  GuideLayer,
+  VectorShape,
+} from "@/components/editor/VectorScene";
 
 type FillMode = "repeat" | "collection";
 
@@ -20,9 +24,11 @@ export function LivePreview() {
     zoom,
     previewMode,
     showGuides,
+    showCollisions,
     setZoom,
     setPreviewMode,
     toggleGuides,
+    setShowCollisions,
   } = useEditorStore();
   const [fillMode, setFillMode] = useState<FillMode>("repeat");
   const tile = project.tiles.find((item) => item.id === project.activeTileId)!;
@@ -125,6 +131,19 @@ export function LivePreview() {
                     <VectorShape key={`${cell.column}-${cell.row}-${object.id}`} object={object} />
                   ))}
                 </g>
+                {showCollisions && (
+                  <g className="collision-overlay preview-collisions">
+                    {cell.tile.collisions
+                      .filter((collision) => collision.enabled)
+                      .map((collision) => (
+                        <CollisionShapeView
+                          key={`${cell.column}-${cell.row}-collision-${collision.id}`}
+                          collision={collision}
+                          compact
+                        />
+                      ))}
+                  </g>
+                )}
                 {showGuides && !isCenter && (
                   <circle
                     cx={cell.tile.anchor.image.x}
@@ -194,6 +213,14 @@ export function LivePreview() {
         <label className="toggle-row">
           <span>Guider och ankare</span>
           <input type="checkbox" checked={showGuides} onChange={toggleGuides} />
+        </label>
+        <label className="toggle-row">
+          <span>Kollisionsytor</span>
+          <input
+            type="checkbox"
+            checked={showCollisions}
+            onChange={(event) => setShowCollisions(event.target.checked)}
+          />
         </label>
       </div>
     </aside>

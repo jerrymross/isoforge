@@ -2,7 +2,7 @@ export type Point = { x: number; y: number };
 
 export type Tool = "select" | "node" | "line" | "polygon" | "iso-box";
 
-export type WorkspaceMode = "draw" | "convert" | "objects";
+export type WorkspaceMode = "draw" | "convert" | "objects" | "collision";
 
 export type VectorKind = "line" | "polygon" | "iso-box" | "iso-cylinder";
 
@@ -24,6 +24,16 @@ export type VectorObject = {
   rotation?: number;
   style: VectorStyle;
   locked: boolean;
+};
+
+export type CollisionKind = "rectangle" | "polygon" | "ellipse" | "diamond";
+
+export type CollisionShape = {
+  id: string;
+  name: string;
+  kind: CollisionKind;
+  points: Point[];
+  enabled: boolean;
 };
 
 export type Layer = {
@@ -55,6 +65,7 @@ export type Tile = {
   tags: string[];
   collectionId: string;
   objects: VectorObject[];
+  collisions: CollisionShape[];
   layers: Layer[];
   anchor: Anchor;
 };

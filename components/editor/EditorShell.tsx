@@ -10,6 +10,7 @@ import {
   History,
   Moon,
   PencilRuler,
+  Shield,
   Redo2,
   Save,
   Settings2,
@@ -25,6 +26,7 @@ import { LivePreview } from "@/components/preview/LivePreview";
 import { TileLibrary } from "@/components/tiles/TileLibrary";
 import { ToolRail } from "@/components/toolbar/ToolRail";
 import { GeneratorPanel } from "@/components/toolbar/GeneratorPanel";
+import { CollisionPanel } from "@/components/toolbar/CollisionPanel";
 import { loadProject } from "@/lib/project-db";
 import { normalizeProject, useEditorStore } from "@/stores/editor-store";
 import type { Tool } from "@/types/editor";
@@ -172,6 +174,12 @@ export function EditorShell() {
           >
             <Boxes size={13} /> Objekt
           </button>
+          <button
+            className={workspaceMode === "collision" ? "active" : ""}
+            onClick={() => setWorkspaceMode("collision")}
+          >
+            <Shield size={13} /> Kollision
+          </button>
         </div>
         <span className="context-divider" />
         <label>
@@ -206,6 +214,8 @@ export function EditorShell() {
       <div className="workspace">
         {workspaceMode === "draw" ? (
           <ToolRail />
+        ) : workspaceMode === "collision" ? (
+          <CollisionPanel />
         ) : (
           <GeneratorPanel mode={workspaceMode} />
         )}

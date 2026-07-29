@@ -5,7 +5,7 @@ import { Crosshair, Maximize2, Minus, Plus } from "lucide-react";
 import { makeIsoBox, snapIsoLine, snapPoint } from "@/features/drawing/geometry";
 import { useEditorStore } from "@/stores/editor-store";
 import type { Point, VectorObject } from "@/types/editor";
-import { GuideLayer, VectorShape } from "./VectorScene";
+import { CollisionShapeView, GuideLayer, VectorShape } from "./VectorScene";
 
 type CanvasViewBox = { x: number; y: number; width: number; height: number };
 
@@ -38,11 +38,15 @@ export function EditorCanvas() {
   const {
     project,
     tool,
+    workspaceMode,
     selectedObjectId,
+    selectedCollisionId,
     selectedLayerId,
     showGuides,
+    showCollisions,
     canvasZoom,
     selectObject,
+    selectCollision,
     addObject,
     moveObject,
     setCanvasZoom,
@@ -68,6 +72,10 @@ export function EditorCanvas() {
 
   function beginCanvas(event: React.PointerEvent<SVGSVGElement>) {
     if (event.button !== 0) return;
+    if (workspaceMode === "collision") {
+      if (event.target === event.currentTarget) selectCollision(null);
+      return;
+    }
     if (event.target !== event.currentTarget && tool === "select") return;
     const point = snapPoint(eventPoint(event, viewBox), project);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -273,6 +281,23 @@ export function EditorCanvas() {
               />
             )}
           </g>
+          {(showCollisions || workspaceMode === "collision") && (
+            <g className="collision-overlay">
+              {tile.collisions
+                .filter((collision) => collision.enabled)
+                .map((collision) => (
+                  <CollisionShapeView
+                    key={collision.id}
+                    collision={collision}
+                    selected={selectedCollisionId === collision.id}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                      selectCollision(collision.id);
+                    }}
+                  />
+                ))}
+            </g>
+          )}
           {angle !== null && draft && (
             <g transform={`translate(${draft.at(-1)!.x + 12} ${draft.at(-1)!.y - 12})`}>
               <rect x="-4" y="-15" width="54" height="24" rx="6" className="angle-chip" />

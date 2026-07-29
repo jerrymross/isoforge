@@ -6,6 +6,7 @@ import {
   TILE_CENTER,
   tileDiamond,
 } from "@/features/drawing/geometry";
+import { collisionBounds } from "@/features/collision/collision";
 
 function escapeXml(value: string): string {
   return value
@@ -89,6 +90,21 @@ export function projectToSvg(
 
 export function projectToTsx(project: Project, tile: Tile): string {
   const name = escapeXml(project.name);
+  const collisionObjects = tile.collisions
+    .filter((collision) => collision.enabled)
+    .map((collision, index) => {
+      const bounds = collisionBounds(collision);
+      const base = `id="${index + 1}" name="${escapeXml(collision.name)}" x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}"`;
+      if (collision.kind === "rectangle") return `   <object ${base}/>`;
+      if (collision.kind === "ellipse") {
+        return `   <object ${base}><ellipse/></object>`;
+      }
+      const points = collision.points
+        .map((point) => `${point.x - bounds.x},${point.y - bounds.y}`)
+        .join(" ");
+      return `   <object ${base}><polygon points="${points}"/></object>`;
+    })
+    .join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.11" tiledversion="1.11.2" name="${name}" tilewidth="${project.tileWidth}" tileheight="${project.tileHeight}" tilecount="1" columns="1">
  <tileoffset x="${Math.round(tile.anchor.image.x - 320)}" y="${Math.round(tile.anchor.image.y - 336)}"/>
@@ -102,7 +118,11 @@ export function projectToTsx(project: Project, tile: Tile): string {
    <property name="sortY" type="int" value="${Math.round(tile.anchor.sort.y)}"/>
    <property name="height" type="int" value="${project.canvasHeight}"/>
    <property name="material" value="default"/>
+   <property name="collisionCount" type="int" value="${tile.collisions.filter((collision) => collision.enabled).length}"/>
   </properties>
+  <objectgroup name="collision">
+${collisionObjects}
+  </objectgroup>
  </tile>
 </tileset>`;
 }

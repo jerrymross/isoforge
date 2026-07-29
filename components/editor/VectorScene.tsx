@@ -1,6 +1,7 @@
 "use client";
 
-import type { Tile, VectorObject } from "@/types/editor";
+import type { CollisionShape, Tile, VectorObject } from "@/types/editor";
+import { collisionBounds } from "@/features/collision/collision";
 import {
   objectRotationTransform,
   pointsToString,
@@ -130,6 +131,55 @@ export function VectorShape({ object, selected, onPointerDown }: VectorShapeProp
           ))}
         </>
       )}
+    </g>
+  );
+}
+
+type CollisionShapeProps = {
+  collision: CollisionShape;
+  selected?: boolean;
+  compact?: boolean;
+  onPointerDown?: (event: React.PointerEvent<SVGGElement>) => void;
+};
+
+export function CollisionShapeView({
+  collision,
+  selected,
+  compact,
+  onPointerDown,
+}: CollisionShapeProps) {
+  const bounds = collisionBounds(collision);
+  return (
+    <g
+      className={[
+        "collision-shape",
+        selected ? "is-selected" : "",
+        compact ? "is-compact" : "",
+      ].join(" ")}
+      data-collision-id={collision.id}
+      onPointerDown={onPointerDown}
+    >
+      {collision.kind === "ellipse" ? (
+        <ellipse
+          cx={bounds.x + bounds.width / 2}
+          cy={bounds.y + bounds.height / 2}
+          rx={bounds.width / 2}
+          ry={bounds.height / 2}
+        />
+      ) : (
+        <polygon points={pointsToString(collision.points)} />
+      )}
+      {selected &&
+        collision.points.map((point, index) => (
+          <circle
+            key={`${collision.id}-${index}`}
+            className="collision-node"
+            cx={point.x}
+            cy={point.y}
+            r="4"
+            pointerEvents="none"
+          />
+        ))}
     </g>
   );
 }
