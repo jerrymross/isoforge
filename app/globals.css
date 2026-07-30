@@ -1030,6 +1030,22 @@ button:disabled {
   font-weight: 800;
 }
 
+.vector-node.is-interactive {
+  cursor: nwse-resize;
+  filter: drop-shadow(0 2px 4px rgba(238, 106, 71, 0.28));
+}
+
+.vector-node.is-interactive:hover {
+  fill: #fff;
+  stroke-width: 2.6;
+}
+
+.node-tool-hint {
+  fill: #c7583b;
+  font-size: 8px;
+  font-weight: 800;
+}
+
 .anchor-handle {
   cursor: grab;
 }
@@ -2578,6 +2594,15 @@ html[data-theme="dark"] .export-guide {
 
 html[data-theme="dark"] .anchor-ring {
   fill: #1b2522;
+}
+
+html[data-theme="dark"] .vector-node.is-interactive {
+  fill: #202b28;
+  stroke: #f38a6d;
+}
+
+html[data-theme="dark"] .node-tool-hint {
+  fill: #f38a6d;
 }
 
 html[data-theme="dark"] .tool-button {

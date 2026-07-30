@@ -78,6 +78,13 @@ export function EditorCanvas() {
     pivot: Point;
     startDistance: number;
   } | null>(null);
+  const nodeDragRef = useRef<{
+    id: string;
+    source: VectorObject;
+    pivot: Point;
+    startDistance: number;
+    coordinateElement: SVGGraphicsElement;
+  } | null>(null);
   const viewBox: CanvasViewBox = {
     width: 640 / canvasZoom,
     height: 480 / canvasZoom,
@@ -139,6 +146,24 @@ export function EditorCanvas() {
       }
       return;
     }
+    if (nodeDragRef.current) {
+      const matrix = nodeDragRef.current.coordinateElement.getScreenCTM();
+      if (!matrix) return;
+      const localPoint = new DOMPoint(event.clientX, event.clientY).matrixTransform(
+        matrix.inverse(),
+      );
+      const distance = Math.hypot(
+        localPoint.x - nodeDragRef.current.pivot.x,
+        localPoint.y - nodeDragRef.current.pivot.y,
+      );
+      scaleObject(
+        nodeDragRef.current.id,
+        nodeDragRef.current.source,
+        nodeDragRef.current.pivot,
+        distance / nodeDragRef.current.startDistance,
+      );
+      return;
+    }
     if (scaleDragRef.current) {
       const distance = Math.hypot(
         point.x - scaleDragRef.current.pivot.x,
@@ -183,9 +208,10 @@ export function EditorCanvas() {
   }
 
   function endCanvas(event: React.PointerEvent<SVGSVGElement>) {
-    if (anchorDragRef.current || scaleDragRef.current) {
+    if (anchorDragRef.current || scaleDragRef.current || nodeDragRef.current) {
       anchorDragRef.current = null;
       scaleDragRef.current = null;
+      nodeDragRef.current = null;
       return;
     }
     if (dragRef.current) {
@@ -273,6 +299,42 @@ export function EditorCanvas() {
     svg.setPointerCapture(event.pointerId);
   }
 
+  function beginNodeDrag(
+    event: React.PointerEvent<SVGCircleElement>,
+    object: VectorObject,
+    pointIndex: number,
+  ) {
+    event.stopPropagation();
+    if (tool !== "node" || object.locked || object.points.length < 2) return;
+    const svg = event.currentTarget.ownerSVGElement;
+    const coordinateElement = event.currentTarget.parentElement;
+    if (!svg || !(coordinateElement instanceof SVGGraphicsElement)) return;
+    const handle = object.points[pointIndex];
+    const pivot = object.points.reduce((farthest, candidate) => {
+      const farthestDistance = Math.hypot(
+        farthest.x - handle.x,
+        farthest.y - handle.y,
+      );
+      const candidateDistance = Math.hypot(
+        candidate.x - handle.x,
+        candidate.y - handle.y,
+      );
+      return candidateDistance > farthestDistance ? candidate : farthest;
+    }, object.points[0]);
+    beginContinuousEdit();
+    nodeDragRef.current = {
+      id: object.id,
+      source: object,
+      pivot,
+      startDistance: Math.max(
+        1,
+        Math.hypot(handle.x - pivot.x, handle.y - pivot.y),
+      ),
+      coordinateElement,
+    };
+    svg.setPointerCapture(event.pointerId);
+  }
+
   return (
     <section className="canvas-panel" aria-label="Rityta">
       <div className="panel-heading">
@@ -353,6 +415,7 @@ export function EditorCanvas() {
             dragRef.current = null;
             anchorDragRef.current = null;
             scaleDragRef.current = null;
+            nodeDragRef.current = null;
           }}
         >
           <defs>
@@ -382,7 +445,13 @@ export function EditorCanvas() {
                     ?.opacity ?? 1
                 }
                 selected={selectedObjectId === object.id}
+                nodesInteractive={
+                  tool === "node" && selectedObjectId === object.id
+                }
                 onPointerDown={(event) => beginObjectDrag(event, object)}
+                onNodePointerDown={(event, index) =>
+                  beginNodeDrag(event, object, index)
+                }
               />
             ))}
             {draft && (
@@ -437,6 +506,16 @@ export function EditorCanvas() {
                 Dra ett hörn för proportionell skalning
               </text>
             </g>
+          )}
+          {tool === "node" && selectedObject && (
+            <text
+              className="node-tool-hint"
+              x={selectedBounds?.minX ?? TILE_CENTER.x}
+              y={(selectedBounds?.minY ?? TILE_CENTER.y) - 13}
+              pointerEvents="none"
+            >
+              Dra en punkt – proportionerna bevaras
+            </text>
           )}
           {showGuides && (
             <g className="interactive-anchor-layer">

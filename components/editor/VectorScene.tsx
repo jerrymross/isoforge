@@ -13,15 +13,22 @@ import { shade } from "@/features/tiled-export/exporters";
 type VectorShapeProps = {
   object: VectorObject;
   selected?: boolean;
+  nodesInteractive?: boolean;
   layerOpacity?: number;
   onPointerDown?: (event: React.PointerEvent<SVGGElement>) => void;
+  onNodePointerDown?: (
+    event: React.PointerEvent<SVGCircleElement>,
+    index: number,
+  ) => void;
 };
 
 export function VectorShape({
   object,
   selected,
+  nodesInteractive = false,
   layerOpacity = 1,
   onPointerDown,
+  onNodePointerDown,
 }: VectorShapeProps) {
   const common = {
     stroke: object.style.stroke,
@@ -125,14 +132,20 @@ export function VectorShape({
           {object.points.map((point, index) => (
             <circle
               key={`${object.id}-${index}`}
+              className={nodesInteractive ? "vector-node is-interactive" : "vector-node"}
               cx={point.x}
               cy={point.y}
-              r="4"
+              r={nodesInteractive ? 6 : 4}
               fill="#fffaf0"
               stroke="#f06b45"
               strokeWidth="2"
               vectorEffect="non-scaling-stroke"
-              pointerEvents="none"
+              pointerEvents={nodesInteractive ? "all" : "none"}
+              onPointerDown={
+                nodesInteractive
+                  ? (event) => onNodePointerDown?.(event, index)
+                  : undefined
+              }
             />
           ))}
         </>
