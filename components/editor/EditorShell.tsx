@@ -25,7 +25,11 @@ import { ToolRail } from "@/components/toolbar/ToolRail";
 import { GeneratorPanel } from "@/components/toolbar/GeneratorPanel";
 import { CollisionPanel } from "@/components/toolbar/CollisionPanel";
 import { loadProject } from "@/lib/project-db";
-import { normalizeProject, useEditorStore } from "@/stores/editor-store";
+import {
+  normalizeProject,
+  prepareProjectForLaunch,
+  useEditorStore,
+} from "@/stores/editor-store";
 import type { Tool } from "@/types/editor";
 
 const toolKeys: Record<string, Tool> = {
@@ -73,7 +77,9 @@ export function EditorShell() {
     void loadProject("default-project").then((saved) => {
       if (saved) {
         useEditorStore.setState({
-          project: normalizeProject(saved),
+          project: prepareProjectForLaunch(normalizeProject(saved)),
+          selectedObjectId: null,
+          selectedCollisionId: null,
           autosaveState: "saved",
         });
       }

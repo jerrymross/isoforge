@@ -2,9 +2,51 @@ import { describe, expect, it } from "vitest";
 import { projectToSvg, projectToTsx } from "./exporters";
 import { createDefaultProject } from "@/stores/editor-store";
 
+function createProjectWithBox() {
+  const project = createDefaultProject();
+  const tile = project.tiles[0];
+  tile.objects.push({
+    id: "test-box",
+    name: "Testbox",
+    kind: "iso-box",
+    layerId: "base",
+    points: [
+      { x: 320, y: 184 },
+      { x: 402, y: 225 },
+      { x: 320, y: 266 },
+      { x: 238, y: 225 },
+      { x: 402, y: 305 },
+      { x: 320, y: 346 },
+      { x: 238, y: 305 },
+    ],
+    height: 80,
+    style: {
+      fill: "#e9a85d",
+      stroke: "#24313a",
+      strokeWidth: 2,
+      opacity: 1,
+      shadow: true,
+    },
+    locked: false,
+  });
+  tile.collisions.push({
+    id: "test-collision",
+    name: "Bas",
+    kind: "diamond",
+    points: [
+      { x: 320, y: 261 },
+      { x: 390, y: 296 },
+      { x: 320, y: 331 },
+      { x: 250, y: 296 },
+    ],
+    enabled: true,
+  });
+  return project;
+}
+
 describe("Tiled-export", () => {
   it("skapar deterministisk SVG med tre boxytor", () => {
-    const project = createDefaultProject();
+    const project = createProjectWithBox();
     const tile = project.tiles[0];
     const svg = projectToSvg(project, tile);
     expect(svg.match(/<polygon/g)).toHaveLength(3);
@@ -12,7 +54,7 @@ describe("Tiled-export", () => {
   });
 
   it("skapar TSX med korrekta mått och properties", () => {
-    const project = createDefaultProject();
+    const project = createProjectWithBox();
     const tile = project.tiles[0];
     const tsx = projectToTsx(project, tile);
     expect(tsx).toContain('tilewidth="128"');
@@ -25,7 +67,7 @@ describe("Tiled-export", () => {
   });
 
   it("preserves edited object rotation in SVG export", () => {
-    const project = createDefaultProject();
+    const project = createProjectWithBox();
     project.tiles[0].objects[0] = {
       ...project.tiles[0].objects[0],
       rotation: 26.565,
@@ -35,7 +77,7 @@ describe("Tiled-export", () => {
   });
 
   it("exports forward tilt as a separate SVG transform", () => {
-    const project = createDefaultProject();
+    const project = createProjectWithBox();
     project.tiles[0].objects[0] = {
       ...project.tiles[0].objects[0],
       tilt: 26.565,
@@ -46,7 +88,7 @@ describe("Tiled-export", () => {
   });
 
   it("exports objects in layer order with effective layer opacity", () => {
-    const project = createDefaultProject();
+    const project = createProjectWithBox();
     const tile = project.tiles[0];
     tile.layers.find((layer) => layer.id === "base")!.opacity = 0.5;
     tile.objects.push({

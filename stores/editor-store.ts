@@ -52,46 +52,24 @@ function defaultAnchor() {
   };
 }
 
-function sampleBox(
-  id: string,
-  name: string,
-  fill: string,
-  height: number,
-  halfWidth: number,
-  halfDepth: number,
-): VectorObject {
-  const topY = 304 - halfDepth - height;
+export function createEmptyTile(): Tile {
   return {
-    id,
-    name,
-    kind: "iso-box",
-    layerId: "base",
-    points: [
-      { x: 320, y: topY },
-      { x: 320 + halfWidth, y: 304 - height },
-      { x: 320, y: 304 + halfDepth - height },
-      { x: 320 - halfWidth, y: 304 - height },
-      { x: 320 + halfWidth, y: 304 },
-      { x: 320, y: 304 + halfDepth },
-      { x: 320 - halfWidth, y: 304 },
-    ],
-    height,
-    style: {
-      fill,
-      stroke: "#24313a",
-      strokeWidth: 2,
-      opacity: 1,
-      shadow: true,
-    },
-    locked: false,
+    id: "tile-start",
+    name: "Ny tile",
+    category: "Okategoriserad",
+    tags: [],
+    collectionId: "collection-my-tiles",
+    layers: defaultLayers(),
+    collisions: [],
+    objects: [],
+    anchor: defaultAnchor(),
   };
 }
 
 export function createDefaultProject(): Project {
-  const layers = defaultLayers();
   return {
     id: "default-project",
-    name: "Bageri — prototyp",
+    name: "Nytt isometriskt projekt",
     tileWidth: 128,
     tileHeight: 64,
     canvasWidth: 128,
@@ -103,117 +81,31 @@ export function createDefaultProject(): Project {
       fillColor: "#e9a85d",
       lightDirection: "top-left",
     },
-    collections: [
-      { id: "collection-bakery", name: "Bageri" },
-      { id: "collection-architecture", name: "Arkitektur" },
-    ],
+    collections: [{ id: "collection-my-tiles", name: "Mina tiles" }],
+    tiles: [createEmptyTile()],
+    activeTileId: "tile-start",
+    updatedAt: now(),
+  };
+}
+
+export function prepareProjectForLaunch(project: Project): Project {
+  const emptyTile = createEmptyTile();
+  const collections = project.collections.some(
+    (collection) => collection.id === emptyTile.collectionId,
+  )
+    ? project.collections
+    : [
+        { id: emptyTile.collectionId, name: "Mina tiles" },
+        ...project.collections,
+      ];
+  return {
+    ...project,
+    collections,
     tiles: [
-      {
-        id: "tile-workbench",
-        name: "Arbetsbänk",
-        category: "Möbler",
-        tags: ["bageri", "metall"],
-        collectionId: "collection-bakery",
-        layers,
-        collisions: [
-          {
-            id: "workbench-collision",
-            name: "Bas",
-            kind: "diamond",
-            points: [
-              { x: 320, y: 261 },
-              { x: 390, y: 296 },
-              { x: 320, y: 331 },
-              { x: 250, y: 296 },
-            ],
-            enabled: true,
-          },
-        ],
-        objects: [
-          {
-            id: "starter-box",
-            name: "Isometrisk box",
-            kind: "iso-box",
-            layerId: "base",
-            points: [
-              { x: 320, y: 184 },
-              { x: 402, y: 225 },
-              { x: 320, y: 266 },
-              { x: 238, y: 225 },
-              { x: 402, y: 305 },
-              { x: 320, y: 346 },
-              { x: 238, y: 305 },
-            ],
-            height: 80,
-            style: {
-              fill: "#e9a85d",
-              stroke: "#24313a",
-              strokeWidth: 2,
-              opacity: 1,
-              shadow: true,
-            },
-            locked: false,
-          },
-        ],
-        anchor: defaultAnchor(),
-      },
-      {
-        id: "tile-floor",
-        name: "Kalkstensgolv",
-        category: "Golv",
-        tags: ["sten", "sömlös"],
-        collectionId: "collection-architecture",
-        layers: defaultLayers(),
-        collisions: [],
-        objects: [
-          {
-            id: "floor-diamond",
-            name: "Golvyta",
-            kind: "polygon",
-            layerId: "base",
-            points: [
-              { x: 320, y: 272 },
-              { x: 384, y: 304 },
-              { x: 320, y: 336 },
-              { x: 256, y: 304 },
-            ],
-            height: 0,
-            style: {
-              fill: "#b8c4b7",
-              stroke: "#66746f",
-              strokeWidth: 1.5,
-              opacity: 1,
-              shadow: false,
-            },
-            locked: false,
-          },
-        ],
-        anchor: defaultAnchor(),
-      },
-      {
-        id: "tile-wall",
-        name: "Putsad vägg",
-        category: "Väggar",
-        tags: ["vägg", "puts"],
-        collectionId: "collection-architecture",
-        layers: defaultLayers(),
-        collisions: [],
-        objects: [sampleBox("wall-box", "Väggsektion", "#d4c7ad", 116, 64, 12)],
-        anchor: defaultAnchor(),
-      },
-      {
-        id: "tile-oven",
-        name: "Bakugn",
-        category: "Maskiner",
-        tags: ["bageri", "ugn"],
-        collectionId: "collection-bakery",
-        layers: defaultLayers(),
-        collisions: [],
-        objects: [sampleBox("oven-box", "Ugn", "#9f6853", 92, 52, 28)],
-        anchor: defaultAnchor(),
-      },
+      emptyTile,
+      ...project.tiles.filter((tile) => tile.id !== emptyTile.id),
     ],
-    activeTileId: "tile-workbench",
+    activeTileId: emptyTile.id,
     updatedAt: now(),
   };
 }
@@ -356,8 +248,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   project: createDefaultProject(),
   tool: "select",
   workspaceMode: "draw",
-  selectedObjectId: "starter-box",
-  selectedCollisionId: "workbench-collision",
+  selectedObjectId: null,
+  selectedCollisionId: null,
   selectedLayerId: "base",
   zoom: 1,
   canvasZoom: 1,
