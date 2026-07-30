@@ -251,6 +251,27 @@ export function autoSizeObjects(
   }));
 }
 
+export function autoSizeObjectsToTile(
+  objects: VectorObject[],
+  options: {
+    tileWidth: number;
+    tileHeight: number;
+    canvasHeight: number;
+    baseline?: number;
+  },
+): VectorObject[] {
+  const flatTile = objects.every((object) => Math.abs(object.height) < 0.001);
+  return autoSizeObjects(objects, {
+    centerX: TILE_CENTER.x,
+    baseline:
+      options.baseline ?? TILE_CENTER.y + options.tileHeight / 2,
+    maxWidth: flatTile ? options.tileWidth : options.tileWidth * 0.92,
+    maxHeight: flatTile
+      ? options.tileHeight
+      : Math.max(options.tileHeight, options.canvasHeight - options.tileHeight / 2),
+  });
+}
+
 export function validateProject(project: Project): string[] {
   const tile = project.tiles.find((item) => item.id === project.activeTileId);
   if (!tile) return ["Aktiv tile saknas"];

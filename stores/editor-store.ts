@@ -21,7 +21,7 @@ import {
 import { saveProject } from "@/lib/project-db";
 import {
   autoPlaceObjects,
-  autoSizeObjects,
+  autoSizeObjectsToTile,
   normalizeAngle,
   normalizeTilt,
   snapObjectAngle,
@@ -599,11 +599,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       );
       if (!targets.length) return state;
       const sized = new Map(
-        autoSizeObjects(targets, {
-          centerX: 320,
+        autoSizeObjectsToTile(targets, {
+          tileWidth: state.project.tileWidth,
+          tileHeight: state.project.tileHeight,
+          canvasHeight: state.project.canvasHeight,
           baseline: tile.anchor.baseline,
-          maxWidth: Math.max(64, state.project.canvasWidth * 1.8),
-          maxHeight: Math.max(96, state.project.canvasHeight - 20),
         }).map((object) => [object.id, object]),
       );
       return snapshot(

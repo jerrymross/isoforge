@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   autoPlaceObjects,
   autoSizeObjects,
+  autoSizeObjectsToTile,
   isoGridOffset,
   makeIsoBox,
   normalizeAngle,
   normalizeTilt,
+  objectBounds,
   objectRotationTransform,
   objectTiltTransform,
   objectTransform,
@@ -116,6 +118,35 @@ describe("isometrisk geometri", () => {
     expect(width).toBe(100);
     expect(height).toBe(100);
     expect(sized.points[2].y).toBe(336);
+  });
+
+  it("auto-fits a flat tile exactly to the live preview diamond", () => {
+    const floor: VectorObject = {
+      ...square,
+      points: tileDiamond(128, 64),
+    };
+    const [sized] = autoSizeObjectsToTile([floor], {
+      tileWidth: 128,
+      tileHeight: 64,
+      canvasHeight: 192,
+      baseline: 336,
+    });
+    const bounds = objectBounds([sized])!;
+    expect(bounds.width).toBe(128);
+    expect(bounds.height).toBe(64);
+    expect(bounds.maxY).toBe(336);
+  });
+
+  it("keeps raised objects inside one preview tile footprint", () => {
+    const [sized] = autoSizeObjectsToTile([{ ...square, height: 80 }], {
+      tileWidth: 128,
+      tileHeight: 64,
+      canvasHeight: 192,
+      baseline: 336,
+    });
+    const bounds = objectBounds([sized])!;
+    expect(bounds.width).toBeCloseTo(117.76);
+    expect(bounds.maxY).toBe(336);
   });
 
   it("snaps free rotation to the nearest isometric direction", () => {

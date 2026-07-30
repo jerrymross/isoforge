@@ -198,7 +198,7 @@ export function EditorCanvas() {
               <MoveDown size={13} /> Auto-tilt
             </button>
             <button
-              title={selectedObjectId ? "Skala markeringen till exportytan" : "Skala hela tilen till exportytan"}
+              title={selectedObjectId ? "Skala markeringen till tilens previewyta" : "Skala hela tilen till previewytan"}
               disabled={!tile.objects.length}
               onClick={autoSizeSelected}
             >
