@@ -1026,6 +1026,83 @@ button:disabled {
   filter: drop-shadow(0 2px 5px rgba(238, 106, 71, 0.18));
 }
 
+.scale-overlay rect {
+  fill: none;
+  stroke: #f06b45;
+  stroke-width: 1.4;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.scale-overlay circle {
+  fill: #fffaf0;
+  stroke: #f06b45;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  cursor: nwse-resize;
+}
+
+.scale-overlay circle:nth-of-type(2),
+.scale-overlay circle:nth-of-type(4) {
+  cursor: nesw-resize;
+}
+
+.scale-overlay text {
+  fill: #c7583b;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.anchor-handle {
+  cursor: grab;
+}
+
+.anchor-handle:active {
+  cursor: grabbing;
+}
+
+.anchor-handle > circle,
+.anchor-handle > rect,
+.anchor-handle > path {
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.anchor-handle text {
+  fill: #6d7b78;
+  font-size: 7px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: var(--canvas);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+.image-handle circle {
+  fill: #fffaf0;
+  stroke: #f06b45;
+}
+
+.image-handle path {
+  fill: none;
+  stroke: #f06b45;
+}
+
+.tile-anchor-handle rect {
+  fill: #dff0ec;
+  stroke: #447f78;
+}
+
+.sort-handle path {
+  fill: #315f5b;
+  stroke: #fff;
+}
+
+.baseline-handle path {
+  fill: #f06b45;
+  stroke: #fff;
+}
+
 .collision-shape {
   cursor: pointer;
 }

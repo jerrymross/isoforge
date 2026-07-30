@@ -33,6 +33,7 @@ import type { Tool } from "@/types/editor";
 
 const toolKeys: Record<string, Tool> = {
   v: "select",
+  s: "scale",
   n: "node",
   l: "line",
   p: "polygon",

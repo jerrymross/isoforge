@@ -15,6 +15,7 @@ import {
   snapObjectTilt,
   snapIsoLine,
   snapPoint,
+  scaleObjectFromPivot,
   tileDiamond,
   TILED_ISOMETRIC_TILT,
 } from "./geometry";
@@ -128,7 +129,6 @@ describe("isometrisk geometri", () => {
     const [sized] = autoSizeObjectsToTile([floor], {
       tileWidth: 128,
       tileHeight: 64,
-      canvasHeight: 192,
       baseline: 336,
     });
     const bounds = objectBounds([sized])!;
@@ -141,12 +141,17 @@ describe("isometrisk geometri", () => {
     const [sized] = autoSizeObjectsToTile([{ ...square, height: 80 }], {
       tileWidth: 128,
       tileHeight: 64,
-      canvasHeight: 192,
       baseline: 336,
     });
     const bounds = objectBounds([sized])!;
-    expect(bounds.width).toBeCloseTo(117.76);
+    expect(bounds.width).toBeCloseTo(128);
     expect(bounds.maxY).toBe(336);
+  });
+
+  it("scales an object uniformly around the opposite handle", () => {
+    const scaled = scaleObjectFromPivot(square, { x: 20, y: 20 }, 2);
+    expect(scaled.points[0]).toEqual({ x: 20, y: 20 });
+    expect(scaled.points[2]).toEqual({ x: 220, y: 220 });
   });
 
   it("snaps free rotation to the nearest isometric direction", () => {

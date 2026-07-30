@@ -24,6 +24,7 @@ import {
   autoSizeObjectsToTile,
   normalizeAngle,
   normalizeTilt,
+  scaleObjectFromPivot,
   snapObjectAngle,
   snapObjectTilt,
   TILED_ISOMETRIC_TILT,
@@ -282,6 +283,15 @@ type EditorState = {
   setObjectAngle: (id: string, angle: number) => void;
   setObjectTilt: (id: string, tilt: number) => void;
   moveObject: (id: string, points: Point[]) => void;
+  scaleObject: (
+    id: string,
+    source: VectorObject,
+    pivot: Point,
+    scale: number,
+  ) => void;
+  beginContinuousEdit: () => void;
+  moveAnchorPoint: (kind: "image" | "tile" | "sort", point: Point) => void;
+  moveBaseline: (baseline: number) => void;
   addCollision: (kind: CollisionKind) => void;
   updateCollisionBounds: (id: string, patch: Partial<CollisionBounds>) => void;
   toggleCollision: (id: string) => void;
@@ -473,6 +483,39 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       })),
       autosaveState: "saving",
     })),
+  scaleObject: (id, source, pivot, scale) =>
+    set((state) => ({
+      project: updateActiveTile(state.project, (tile) => ({
+        ...tile,
+        objects: tile.objects.map((object) =>
+          object.id === id
+            ? scaleObjectFromPivot(source, pivot, scale)
+            : object,
+        ),
+      })),
+      autosaveState: "saving",
+    })),
+  beginContinuousEdit: () =>
+    set((state) => ({
+      history: [...state.history.slice(-39), state.project],
+      future: [],
+    })),
+  moveAnchorPoint: (kind, point) =>
+    set((state) => ({
+      project: updateActiveTile(state.project, (tile) => ({
+        ...tile,
+        anchor: { ...tile.anchor, [kind]: point } as Anchor,
+      })),
+      autosaveState: "saving",
+    })),
+  moveBaseline: (baseline) =>
+    set((state) => ({
+      project: updateActiveTile(state.project, (tile) => ({
+        ...tile,
+        anchor: { ...tile.anchor, baseline },
+      })),
+      autosaveState: "saving",
+    })),
   addCollision: (kind) =>
     set((state) => {
       const collision = createCollisionShape(kind);
@@ -602,7 +645,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         autoSizeObjectsToTile(targets, {
           tileWidth: state.project.tileWidth,
           tileHeight: state.project.tileHeight,
-          canvasHeight: state.project.canvasHeight,
           baseline: tile.anchor.baseline,
         }).map((object) => [object.id, object]),
       );

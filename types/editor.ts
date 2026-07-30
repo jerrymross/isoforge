@@ -1,6 +1,6 @@
 export type Point = { x: number; y: number };
 
-export type Tool = "select" | "node" | "line" | "polygon" | "iso-box";
+export type Tool = "select" | "scale" | "node" | "line" | "polygon" | "iso-box";
 
 export type WorkspaceMode = "draw" | "convert" | "objects" | "collision";
 

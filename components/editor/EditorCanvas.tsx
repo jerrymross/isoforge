@@ -2,13 +2,20 @@
 
 import { useRef, useState } from "react";
 import { Crosshair, Maximize2, Minus, MoveDown, Plus } from "lucide-react";
-import { makeIsoBox, snapIsoLine, snapPoint } from "@/features/drawing/geometry";
+import {
+  makeIsoBox,
+  objectBounds,
+  snapIsoLine,
+  snapPoint,
+  TILE_CENTER,
+} from "@/features/drawing/geometry";
 import { sortObjectsByLayer } from "@/features/layers/layer-order";
 import { useEditorStore } from "@/stores/editor-store";
 import type { Point, VectorObject } from "@/types/editor";
 import { CollisionShapeView, GuideLayer, VectorShape } from "./VectorScene";
 
 type CanvasViewBox = { x: number; y: number; width: number; height: number };
+type AnchorHandle = "image" | "tile" | "sort" | "baseline";
 
 function clientPoint(
   svg: SVGSVGElement,
@@ -50,6 +57,10 @@ export function EditorCanvas() {
     selectCollision,
     addObject,
     moveObject,
+    scaleObject,
+    beginContinuousEdit,
+    moveAnchorPoint,
+    moveBaseline,
     setCanvasZoom,
     autoPlaceSelected,
     autoTiltSelected,
@@ -60,6 +71,13 @@ export function EditorCanvas() {
   const [draft, setDraft] = useState<Point[] | null>(null);
   const [angle, setAngle] = useState<number | null>(null);
   const dragRef = useRef<{ id: string; start: Point; points: Point[] } | null>(null);
+  const anchorDragRef = useRef<AnchorHandle | null>(null);
+  const scaleDragRef = useRef<{
+    id: string;
+    source: VectorObject;
+    pivot: Point;
+    startDistance: number;
+  } | null>(null);
   const viewBox: CanvasViewBox = {
     width: 640 / canvasZoom,
     height: 480 / canvasZoom,
@@ -74,6 +92,20 @@ export function EditorCanvas() {
     }),
     tile.layers,
   );
+  const selectedObject = tile.objects.find(
+    (object) => object.id === selectedObjectId,
+  );
+  const selectedBounds = selectedObject
+    ? objectBounds([selectedObject])
+    : null;
+  const scaleCorners = selectedBounds
+    ? [
+        { x: selectedBounds.minX, y: selectedBounds.minY },
+        { x: selectedBounds.maxX, y: selectedBounds.minY },
+        { x: selectedBounds.maxX, y: selectedBounds.maxY },
+        { x: selectedBounds.minX, y: selectedBounds.maxY },
+      ]
+    : [];
 
   function beginCanvas(event: React.PointerEvent<SVGSVGElement>) {
     if (event.button !== 0) return;
@@ -81,10 +113,15 @@ export function EditorCanvas() {
       if (event.target === event.currentTarget) selectCollision(null);
       return;
     }
-    if (event.target !== event.currentTarget && tool === "select") return;
+    if (
+      event.target !== event.currentTarget &&
+      (tool === "select" || tool === "scale" || tool === "node")
+    ) {
+      return;
+    }
     const point = snapPoint(eventPoint(event, viewBox), project);
     event.currentTarget.setPointerCapture(event.pointerId);
-    if (tool === "select") {
+    if (tool === "select" || tool === "scale" || tool === "node") {
       selectObject(null);
       return;
     }
@@ -94,6 +131,27 @@ export function EditorCanvas() {
 
   function moveCanvas(event: React.PointerEvent<SVGSVGElement>) {
     const point = eventPoint(event, viewBox);
+    if (anchorDragRef.current) {
+      if (anchorDragRef.current === "baseline") {
+        moveBaseline(point.y);
+      } else {
+        moveAnchorPoint(anchorDragRef.current, point);
+      }
+      return;
+    }
+    if (scaleDragRef.current) {
+      const distance = Math.hypot(
+        point.x - scaleDragRef.current.pivot.x,
+        point.y - scaleDragRef.current.pivot.y,
+      );
+      scaleObject(
+        scaleDragRef.current.id,
+        scaleDragRef.current.source,
+        scaleDragRef.current.pivot,
+        distance / scaleDragRef.current.startDistance,
+      );
+      return;
+    }
     if (dragRef.current) {
       const dx = point.x - dragRef.current.start.x;
       const dy = point.y - dragRef.current.start.y;
@@ -125,11 +183,24 @@ export function EditorCanvas() {
   }
 
   function endCanvas(event: React.PointerEvent<SVGSVGElement>) {
+    if (anchorDragRef.current || scaleDragRef.current) {
+      anchorDragRef.current = null;
+      scaleDragRef.current = null;
+      return;
+    }
     if (dragRef.current) {
       dragRef.current = null;
       return;
     }
-    if (!start || !draft || tool === "select" || tool === "node") return;
+    if (
+      !start ||
+      !draft ||
+      tool === "select" ||
+      tool === "scale" ||
+      tool === "node"
+    ) {
+      return;
+    }
     const kind = tool === "iso-box" ? "iso-box" : tool;
     const object: VectorObject = {
       id: crypto.randomUUID(),
@@ -167,6 +238,38 @@ export function EditorCanvas() {
     if (!svg) return;
     const point = clientPoint(svg, event.clientX, event.clientY, viewBox);
     dragRef.current = { id: object.id, start: point, points: object.points };
+    svg.setPointerCapture(event.pointerId);
+  }
+
+  function beginAnchorDrag(
+    event: React.PointerEvent<SVGElement>,
+    handle: AnchorHandle,
+  ) {
+    event.stopPropagation();
+    const svg = event.currentTarget.ownerSVGElement;
+    if (!svg) return;
+    beginContinuousEdit();
+    anchorDragRef.current = handle;
+    svg.setPointerCapture(event.pointerId);
+  }
+
+  function beginScaleDrag(
+    event: React.PointerEvent<SVGElement>,
+    object: VectorObject,
+    handle: Point,
+    pivot: Point,
+  ) {
+    event.stopPropagation();
+    if (object.locked) return;
+    const svg = event.currentTarget.ownerSVGElement;
+    if (!svg) return;
+    beginContinuousEdit();
+    scaleDragRef.current = {
+      id: object.id,
+      source: object,
+      pivot,
+      startDistance: Math.max(1, Math.hypot(handle.x - pivot.x, handle.y - pivot.y)),
+    };
     svg.setPointerCapture(event.pointerId);
   }
 
@@ -248,6 +351,8 @@ export function EditorCanvas() {
             setStart(null);
             setDraft(null);
             dragRef.current = null;
+            anchorDragRef.current = null;
+            scaleDragRef.current = null;
           }}
         >
           <defs>
@@ -301,6 +406,75 @@ export function EditorCanvas() {
               />
             )}
           </g>
+          {tool === "scale" && selectedObject && selectedBounds && (
+            <g className="scale-overlay">
+              <rect
+                x={selectedBounds.minX}
+                y={selectedBounds.minY}
+                width={selectedBounds.width}
+                height={selectedBounds.height}
+                pointerEvents="none"
+              />
+              {scaleCorners.map((handle, index) => {
+                const pivot = scaleCorners[(index + 2) % 4];
+                return (
+                  <circle
+                    key={`scale-${index}`}
+                    cx={handle.x}
+                    cy={handle.y}
+                    r="6"
+                    onPointerDown={(event) =>
+                      beginScaleDrag(event, selectedObject, handle, pivot)
+                    }
+                  />
+                );
+              })}
+              <text
+                x={selectedBounds.minX}
+                y={selectedBounds.minY - 11}
+                pointerEvents="none"
+              >
+                Dra ett hörn för proportionell skalning
+              </text>
+            </g>
+          )}
+          {showGuides && (
+            <g className="interactive-anchor-layer">
+              <g
+                className="anchor-handle image-handle"
+                transform={`translate(${tile.anchor.image.x} ${tile.anchor.image.y})`}
+                onPointerDown={(event) => beginAnchorDrag(event, "image")}
+              >
+                <circle r="8" />
+                <path d="M -4 0 H 4 M 0 -4 V 4" />
+                <text x="12" y="-9">Bildankare</text>
+              </g>
+              <g
+                className="anchor-handle tile-anchor-handle"
+                transform={`translate(${tile.anchor.tile.x} ${tile.anchor.tile.y})`}
+                onPointerDown={(event) => beginAnchorDrag(event, "tile")}
+              >
+                <rect x="-6" y="-6" width="12" height="12" rx="2" />
+                <text x="12" y="14">Tileankare</text>
+              </g>
+              <g
+                className="anchor-handle sort-handle"
+                transform={`translate(${tile.anchor.sort.x} ${tile.anchor.sort.y})`}
+                onPointerDown={(event) => beginAnchorDrag(event, "sort")}
+              >
+                <path d="M 0 -8 L 8 0 L 0 8 L -8 0 Z" />
+                <text x="12" y="3">Sortering</text>
+              </g>
+              <g
+                className="anchor-handle baseline-handle"
+                transform={`translate(${TILE_CENTER.x + 150} ${tile.anchor.baseline})`}
+                onPointerDown={(event) => beginAnchorDrag(event, "baseline")}
+              >
+                <path d="M -8 -6 L 4 0 L -8 6 Z" />
+                <text x="8" y="3">Baslinje</text>
+              </g>
+            </g>
+          )}
           {(showCollisions || workspaceMode === "collision") && (
             <g className="collision-overlay">
               {tile.collisions

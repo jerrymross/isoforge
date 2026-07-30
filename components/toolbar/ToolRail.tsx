@@ -10,6 +10,7 @@ import {
   PenLine,
   Pipette,
   ScanLine,
+  Scaling,
   Spline,
   Square,
   Waypoints,
@@ -24,6 +25,7 @@ const tools: Array<{
   shortcut: string;
 }> = [
   { id: "select", label: "Markering", icon: MousePointer2, shortcut: "V" },
+  { id: "scale", label: "Skalning", icon: Scaling, shortcut: "S" },
   { id: "node", label: "Nodverktyg", icon: Waypoints, shortcut: "N" },
   { id: "line", label: "Rak linje", icon: PenLine, shortcut: "L" },
   { id: "polygon", label: "Polygon", icon: Hexagon, shortcut: "P" },

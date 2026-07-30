@@ -256,20 +256,40 @@ export function autoSizeObjectsToTile(
   options: {
     tileWidth: number;
     tileHeight: number;
-    canvasHeight: number;
     baseline?: number;
   },
 ): VectorObject[] {
-  const flatTile = objects.every((object) => Math.abs(object.height) < 0.001);
-  return autoSizeObjects(objects, {
-    centerX: TILE_CENTER.x,
-    baseline:
-      options.baseline ?? TILE_CENTER.y + options.tileHeight / 2,
-    maxWidth: flatTile ? options.tileWidth : options.tileWidth * 0.92,
-    maxHeight: flatTile
-      ? options.tileHeight
-      : Math.max(options.tileHeight, options.canvasHeight - options.tileHeight / 2),
-  });
+  const bounds = objectBounds(objects);
+  if (!bounds) return objects;
+  const baseline =
+    options.baseline ?? TILE_CENTER.y + options.tileHeight / 2;
+  const scale = options.tileWidth / bounds.width;
+  const targetLeft = TILE_CENTER.x - options.tileWidth / 2;
+  const targetTop = baseline - bounds.height * scale;
+  return objects.map((object) => ({
+    ...object,
+    height: object.height * scale,
+    points: object.points.map((point) => ({
+      x: targetLeft + (point.x - bounds.minX) * scale,
+      y: targetTop + (point.y - bounds.minY) * scale,
+    })),
+  }));
+}
+
+export function scaleObjectFromPivot(
+  object: VectorObject,
+  pivot: Point,
+  scale: number,
+): VectorObject {
+  const safeScale = Math.max(0.05, Math.min(20, scale));
+  return {
+    ...object,
+    height: object.height * safeScale,
+    points: object.points.map((point) => ({
+      x: pivot.x + (point.x - pivot.x) * safeScale,
+      y: pivot.y + (point.y - pivot.y) * safeScale,
+    })),
+  };
 }
 
 export function validateProject(project: Project): string[] {
