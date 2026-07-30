@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import type { Project, Tile, VectorObject } from "@/types/editor";
 import {
-  objectRotationTransform,
+  objectTransform,
   pointsToString,
   TILE_CENTER,
   tileDiamond,
@@ -56,7 +56,7 @@ function renderObjectContent(object: VectorObject): string {
 
 function renderObject(object: VectorObject): string {
   const content = renderObjectContent(object);
-  const transform = objectRotationTransform(object);
+  const transform = objectTransform(object);
   return transform ? `<g transform="${transform}">${content}</g>` : content;
 }
 

@@ -34,6 +34,17 @@ describe("Tiled-export", () => {
     expect(svg).toContain('transform="rotate(26.565');
   });
 
+  it("exports forward tilt as a separate SVG transform", () => {
+    const project = createDefaultProject();
+    project.tiles[0].objects[0] = {
+      ...project.tiles[0].objects[0],
+      tilt: 26.565,
+    };
+    const svg = projectToSvg(project, project.tiles[0]);
+    expect(svg).toContain("scale(1 0.894428)");
+    expect(svg).not.toContain('transform="rotate(');
+  });
+
   it("exports objects in layer order with effective layer opacity", () => {
     const project = createDefaultProject();
     const tile = project.tiles[0];

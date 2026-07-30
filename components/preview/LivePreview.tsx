@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Grid3X3, Layers3, Lightbulb, Maximize2, Minus, Plus } from "lucide-react";
 import {
   isoGridOffset,
@@ -79,6 +79,44 @@ export function LivePreview() {
     tile,
   ]);
 
+  const previewFit = useMemo(() => {
+    const points = cells.flatMap((cell) => [
+      ...tileDiamond(
+        project.tileWidth,
+        project.tileHeight,
+        TILE_CENTER,
+      ).map((point) => ({ x: point.x + cell.x, y: point.y + cell.y })),
+      ...cell.tile.objects.flatMap((object) =>
+        object.points.map((point) => ({
+          x: point.x + cell.x,
+          y: point.y + cell.y,
+        })),
+      ),
+    ]);
+    const minX = Math.min(...points.map((point) => point.x));
+    const maxX = Math.max(...points.map((point) => point.x));
+    const minY = Math.min(...points.map((point) => point.y));
+    const maxY = Math.max(...points.map((point) => point.y));
+    return {
+      centerX: (minX + maxX) / 2,
+      centerY: (minY + maxY) / 2,
+      zoom: Math.max(
+        0.5,
+        Math.min(2, Math.min(560 / (maxX - minX + 24), 400 / (maxY - minY + 24))),
+      ),
+    };
+  }, [cells, project.tileHeight, project.tileWidth]);
+
+  useEffect(() => {
+    setZoom(Number(previewFit.zoom.toFixed(2)));
+  }, [
+    previewFit.zoom,
+    previewMode,
+    project.tileHeight,
+    project.tileWidth,
+    setZoom,
+  ]);
+
   function visibleObjects(previewTile: Tile) {
     return sortObjectsByLayer(
       previewTile.objects.filter((object) => {
@@ -90,8 +128,18 @@ export function LivePreview() {
   }
 
   const floorPoints = pointsToString(
-    tileDiamond(project.tileWidth, project.tileHeight, TILE_CENTER),
+    tileDiamond(
+      project.tileWidth + 1.2,
+      project.tileHeight + 0.6,
+      TILE_CENTER,
+    ),
   );
+  const previewViewBox = [
+    previewFit.centerX - 320 / zoom,
+    previewFit.centerY - 240 / zoom,
+    640 / zoom,
+    480 / zoom,
+  ].join(" ");
 
   return (
     <aside className="preview-panel" aria-label="Live-preview">
@@ -106,7 +154,7 @@ export function LivePreview() {
       </div>
       <div className="preview-stage">
         <div className="preview-horizon" />
-        <svg viewBox="0 0 640 480" style={{ transform: `scale(${zoom})` }}>
+        <svg viewBox={previewViewBox}>
           <defs>
             <linearGradient id="preview-floor" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#edf1ed" />
@@ -214,7 +262,13 @@ export function LivePreview() {
           <button aria-label="Zooma ut" onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}>
             <Minus size={14} />
           </button>
-          <span>{Math.round(zoom * 100)}%</span>
+          <button
+            className="preview-zoom-value"
+            title="Autoanpassa hela tilemattan"
+            onClick={() => setZoom(Number(previewFit.zoom.toFixed(2)))}
+          >
+            {Math.round(zoom * 100)}%
+          </button>
           <button aria-label="Zooma in" onClick={() => setZoom(Math.min(2, zoom + 0.25))}>
             <Plus size={14} />
           </button>

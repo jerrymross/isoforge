@@ -4,11 +4,15 @@ import {
   AlertTriangle,
   Link2,
   Magnet,
+  MoveDown,
   RotateCw,
   ScanLine,
   SlidersHorizontal,
 } from "lucide-react";
-import { validateProject } from "@/features/drawing/geometry";
+import {
+  TILED_ISOMETRIC_TILT,
+  validateProject,
+} from "@/features/drawing/geometry";
 import { useEditorStore } from "@/stores/editor-store";
 
 export function Inspector() {
@@ -16,9 +20,12 @@ export function Inspector() {
     project,
     selectedObjectId,
     autoAngle,
+    autoTilt,
     updateObject,
     setObjectAngle,
     setAutoAngle,
+    setAutoTilt,
+    setObjectTilt,
     setAnchorPoint,
     setBaseline,
   } = useEditorStore();
@@ -112,7 +119,7 @@ export function Inspector() {
       </label>
       <div className="angle-editor">
         <div className="angle-editor-heading">
-          <span><RotateCw size={13} /> Vinkel</span>
+          <span><RotateCw size={13} /> Rotation i tileplanet</span>
           <button
             className={autoAngle ? "active" : ""}
             onClick={() => setAutoAngle(!autoAngle)}
@@ -132,7 +139,7 @@ export function Inspector() {
             onChange={(event) =>
               setObjectAngle(selected.id, Number(event.target.value))
             }
-            aria-label="Objektets vinkel"
+            aria-label="Objektets rotation"
           />
           <span>°</span>
           <input
@@ -144,7 +151,7 @@ export function Inspector() {
             onChange={(event) =>
               setObjectAngle(selected.id, Number(event.target.value))
             }
-            aria-label="Justera objektets vinkel"
+            aria-label="Justera objektets rotation"
           />
         </div>
         <div className="angle-presets">
@@ -162,6 +169,59 @@ export function Inspector() {
           {autoAngle
             ? "Snappar till horisontell, vertikal och isometriska riktningar."
             : "Fri rotation i valfri vinkel."}
+        </small>
+      </div>
+      <div className="angle-editor tilt-editor">
+        <div className="angle-editor-heading">
+          <span><MoveDown size={13} /> Tilt framåt</span>
+          <button
+            className={autoTilt ? "active" : ""}
+            onClick={() => setAutoTilt(!autoTilt)}
+            title="Anpassa framåttiltningen till Tiled 2:1-isometri"
+          >
+            <Magnet size={12} />
+            Tiled {autoTilt ? "på" : "av"}
+          </button>
+        </div>
+        <div className="angle-input-row">
+          <input
+            type="number"
+            min="0"
+            max="75"
+            step={autoTilt ? "0.001" : "0.5"}
+            value={Number((selected.tilt ?? 0).toFixed(3))}
+            onChange={(event) =>
+              setObjectTilt(selected.id, Number(event.target.value))
+            }
+            aria-label="Objektets framåttiltning"
+          />
+          <span>°</span>
+          <input
+            type="range"
+            min="0"
+            max="75"
+            step="0.5"
+            value={selected.tilt ?? 0}
+            onChange={(event) =>
+              setObjectTilt(selected.id, Number(event.target.value))
+            }
+            aria-label="Justera objektets framåttiltning"
+          />
+        </div>
+        <div className="angle-presets tilt-presets">
+          {[0, TILED_ISOMETRIC_TILT, 45, 63.435].map((tilt) => (
+            <button
+              key={tilt}
+              className={Math.abs((selected.tilt ?? 0) - tilt) < 0.01 ? "active" : ""}
+              onClick={() => setObjectTilt(selected.id, tilt)}
+            >
+              {tilt === TILED_ISOMETRIC_TILT ? "Tiled " : ""}{tilt}°
+            </button>
+          ))}
+        </div>
+        <small>
+          Tilt är en framåtlutning med vertikal förkortning runt objektets bas,
+          inte en rotation. Tiled 2:1 använder {TILED_ISOMETRIC_TILT}°.
         </small>
       </div>
       <div className="depth-editor">

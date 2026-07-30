@@ -3,7 +3,7 @@
 import type { CollisionShape, Tile, VectorObject } from "@/types/editor";
 import { collisionBounds } from "@/features/collision/collision";
 import {
-  objectRotationTransform,
+  objectTransform,
   pointsToString,
   tileDiamond,
   TILE_CENTER,
@@ -34,7 +34,7 @@ export function VectorShape({
     <g
       data-object-id={object.id}
       className={selected ? "vector-object is-selected" : "vector-object"}
-      transform={objectRotationTransform(object)}
+      transform={objectTransform(object)}
       onPointerDown={onPointerDown}
       style={{ cursor: object.locked ? "not-allowed" : "grab" }}
     >

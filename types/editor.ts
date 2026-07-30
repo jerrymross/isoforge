@@ -22,6 +22,7 @@ export type VectorObject = {
   points: Point[];
   height: number;
   rotation?: number;
+  tilt?: number;
   style: VectorStyle;
   locked: boolean;
 };

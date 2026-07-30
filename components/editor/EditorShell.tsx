@@ -46,14 +46,14 @@ export function EditorShell() {
     project,
     workspaceMode,
     autosaveState,
-    autoAngle,
+    autoTilt,
     history,
     future,
     setProjectName,
     setTileSize,
     setTool,
     setWorkspaceMode,
-    setAutoAngle,
+    setAutoTilt,
     undo,
     redo,
     deleteSelected,
@@ -201,11 +201,11 @@ export function EditorShell() {
         <div><span className="swatch stroke-swatch" /> Linje <b>{project.style.strokeWidth}px</b></div>
         <span className="context-divider" />
         <button
-          className={autoAngle ? "angle-lock active" : "angle-lock"}
-          onClick={() => setAutoAngle(!autoAngle)}
-          title="Växla automatisk vinkelsnappning"
+          className={autoTilt ? "angle-lock active" : "angle-lock"}
+          onClick={() => setAutoTilt(!autoTilt)}
+          title="Växla automatisk framåttiltning för Tiled 2:1-isometri"
         >
-          <Settings2 size={14} /> Autovinkel <b>{autoAngle ? "På" : "Av"}</b>
+          <Settings2 size={14} /> Auto-tilt <b>{autoTilt ? "26,565°" : "Av"}</b>
         </button>
         <div><Copy size={14} /> Snäppning <b>Smart</b></div>
         <button className="history-button"><History size={14} /> Historik</button>

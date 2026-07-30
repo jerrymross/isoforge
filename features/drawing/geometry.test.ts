@@ -5,11 +5,16 @@ import {
   isoGridOffset,
   makeIsoBox,
   normalizeAngle,
+  normalizeTilt,
   objectRotationTransform,
+  objectTiltTransform,
+  objectTransform,
   snapObjectAngle,
+  snapObjectTilt,
   snapIsoLine,
   snapPoint,
   tileDiamond,
+  TILED_ISOMETRIC_TILT,
 } from "./geometry";
 import type { Project } from "@/types/editor";
 import type { VectorObject } from "@/types/editor";
@@ -82,6 +87,17 @@ describe("isometrisk geometri", () => {
     expect(isoGridOffset(0, 1, 128, 64)).toEqual({ x: -64, y: 32 });
   });
 
+  it("places neighboring tile diamonds exactly edge to edge", () => {
+    const center = tileDiamond(128, 64);
+    const offset = isoGridOffset(1, 0, 128, 64);
+    const neighbor = tileDiamond(128, 64).map((point) => ({
+      x: point.x + offset.x,
+      y: point.y + offset.y,
+    }));
+    expect(center[1]).toEqual(neighbor[0]);
+    expect(center[2]).toEqual(neighbor[3]);
+  });
+
   it("autoplacerar gruppen centrerat mot baslinjen", () => {
     const [placed] = autoPlaceObjects([square], 320, 336);
     expect(placed.points[0]).toEqual({ x: 270, y: 236 });
@@ -112,5 +128,20 @@ describe("isometrisk geometri", () => {
     expect(objectRotationTransform({ ...square, rotation: 90 })).toBe(
       "rotate(90 70 70)",
     );
+  });
+
+  it("creates a forward Tiled tilt separately from rotation", () => {
+    expect(snapObjectTilt(25)).toBe(TILED_ISOMETRIC_TILT);
+    expect(normalizeTilt(90)).toBe(75);
+    expect(objectTiltTransform({ ...square, tilt: TILED_ISOMETRIC_TILT })).toBe(
+      "translate(70 120) scale(1 0.894428) translate(-70 -120)",
+    );
+    const combined = objectTransform({
+      ...square,
+      rotation: 90,
+      tilt: TILED_ISOMETRIC_TILT,
+    });
+    expect(combined).toContain("rotate(90 70 70)");
+    expect(combined).toContain("scale(1 0.894428)");
   });
 });

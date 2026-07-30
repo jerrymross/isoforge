@@ -3,6 +3,7 @@ import { isValidCollision } from "@/features/collision/collision";
 
 export const CANVAS_VIEWBOX = { width: 640, height: 480 };
 export const TILE_CENTER: Point = { x: 320, y: 304 };
+export const TILED_ISOMETRIC_TILT = 26.565;
 export const ISOMETRIC_ROTATION_ANGLES = [
   -180,
   -153.435,
@@ -49,6 +50,21 @@ export function normalizeAngle(angle: number): number {
 export function snapObjectAngle(angle: number): number {
   const normalized = normalizeAngle(angle);
   return ISOMETRIC_ROTATION_ANGLES.reduce((closest, candidate) =>
+    Math.abs(normalized - candidate) < Math.abs(normalized - closest)
+      ? candidate
+      : closest,
+  );
+}
+
+export function normalizeTilt(tilt: number): number {
+  if (!Number.isFinite(tilt)) return 0;
+  return Math.max(0, Math.min(75, tilt));
+}
+
+export function snapObjectTilt(tilt: number): number {
+  const normalized = normalizeTilt(tilt);
+  const allowed = [0, TILED_ISOMETRIC_TILT, 45, 63.435];
+  return allowed.reduce((closest, candidate) =>
     Math.abs(normalized - candidate) < Math.abs(normalized - closest)
       ? candidate
       : closest,
@@ -176,6 +192,23 @@ export function objectRotationTransform(object: VectorObject): string | undefine
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
   return `rotate(${rotation} ${centerX} ${centerY})`;
+}
+
+export function objectTiltTransform(object: VectorObject): string | undefined {
+  const tilt = normalizeTilt(object.tilt ?? 0);
+  if (tilt < 0.0001) return undefined;
+  const bounds = objectBounds([object]);
+  if (!bounds) return undefined;
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const pivotY = bounds.maxY;
+  const scaleY = Number(Math.cos((tilt * Math.PI) / 180).toFixed(6));
+  return `translate(${centerX} ${pivotY}) scale(1 ${scaleY}) translate(${-centerX} ${-pivotY})`;
+}
+
+export function objectTransform(object: VectorObject): string | undefined {
+  const rotation = objectRotationTransform(object);
+  const tilt = objectTiltTransform(object);
+  return [rotation, tilt].filter(Boolean).join(" ") || undefined;
 }
 
 export function autoPlaceObjects(

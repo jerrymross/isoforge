@@ -23,7 +23,10 @@ import {
   autoPlaceObjects,
   autoSizeObjects,
   normalizeAngle,
+  normalizeTilt,
   snapObjectAngle,
+  snapObjectTilt,
+  TILED_ISOMETRIC_TILT,
 } from "@/features/drawing/geometry";
 
 const now = () => new Date().toISOString();
@@ -258,6 +261,7 @@ type EditorState = {
   showGuides: boolean;
   showCollisions: boolean;
   autoAngle: boolean;
+  autoTilt: boolean;
   history: Project[];
   future: Project[];
   autosaveState: "saved" | "saving";
@@ -271,10 +275,12 @@ type EditorState = {
   toggleGuides: () => void;
   setShowCollisions: (visible: boolean) => void;
   setAutoAngle: (enabled: boolean) => void;
+  setAutoTilt: (enabled: boolean) => void;
   addObject: (object: VectorObject) => void;
   addObjects: (objects: VectorObject[]) => void;
   updateObject: (id: string, patch: Partial<VectorObject>) => void;
   setObjectAngle: (id: string, angle: number) => void;
+  setObjectTilt: (id: string, tilt: number) => void;
   moveObject: (id: string, points: Point[]) => void;
   addCollision: (kind: CollisionKind) => void;
   updateCollisionBounds: (id: string, patch: Partial<CollisionBounds>) => void;
@@ -342,6 +348,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   showGuides: true,
   showCollisions: false,
   autoAngle: true,
+  autoTilt: true,
   history: [],
   future: [],
   autosaveState: "saved",
@@ -358,29 +365,59 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
   setShowCollisions: (showCollisions) => set({ showCollisions }),
   setAutoAngle: (autoAngle) => set({ autoAngle }),
+  setAutoTilt: (autoTilt) =>
+    set((state) => {
+      if (!autoTilt || !state.selectedObjectId) return { autoTilt };
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (tile) => ({
+            ...tile,
+            objects: tile.objects.map((object) =>
+              object.id === state.selectedObjectId
+                ? { ...object, tilt: TILED_ISOMETRIC_TILT }
+                : object,
+            ),
+          })),
+        ),
+        autoTilt,
+      };
+    }),
   addObject: (object) =>
     set((state) =>
       snapshot(
         state,
         updateActiveTile(state.project, (tile) => ({
           ...tile,
-          objects: [...tile.objects, object],
+          objects: [
+            ...tile.objects,
+            state.autoTilt
+              ? { ...object, tilt: TILED_ISOMETRIC_TILT }
+              : object,
+          ],
         })),
       ),
     ),
   addObjects: (objects) =>
     set((state) => {
       if (!objects.length) return state;
+      const preparedObjects = state.autoTilt
+        ? objects.map((object) => ({
+            ...object,
+            tilt: TILED_ISOMETRIC_TILT,
+          }))
+        : objects;
       return {
         ...snapshot(
           state,
           updateActiveTile(state.project, (tile) => ({
             ...tile,
-            objects: [...tile.objects, ...objects],
+            objects: [...tile.objects, ...preparedObjects],
           })),
         ),
-        selectedObjectId: objects.at(-1)?.id ?? null,
-        selectedLayerId: objects.at(-1)?.layerId ?? state.selectedLayerId,
+        selectedObjectId: preparedObjects.at(-1)?.id ?? null,
+        selectedLayerId:
+          preparedObjects.at(-1)?.layerId ?? state.selectedLayerId,
       };
     }),
   updateObject: (id, patch) =>
@@ -406,6 +443,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ...tile,
           objects: tile.objects.map((object) =>
             object.id === id ? { ...object, rotation } : object,
+          ),
+        })),
+      );
+    }),
+  setObjectTilt: (id, tilt) =>
+    set((state) => {
+      const normalizedTilt = state.autoTilt
+        ? snapObjectTilt(tilt)
+        : normalizeTilt(tilt);
+      return snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          objects: tile.objects.map((object) =>
+            object.id === id ? { ...object, tilt: normalizedTilt } : object,
           ),
         })),
       );
