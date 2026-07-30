@@ -34,6 +34,13 @@ function clientPoint(
   clientY: number,
   viewBox: CanvasViewBox,
 ): Point {
+  const screenMatrix = svg.getScreenCTM();
+  if (screenMatrix) {
+    const point = new DOMPoint(clientX, clientY).matrixTransform(
+      screenMatrix.inverse(),
+    );
+    return { x: point.x, y: point.y };
+  }
   const rect = svg.getBoundingClientRect();
   return {
     x: viewBox.x + ((clientX - rect.left) / rect.width) * viewBox.width,
