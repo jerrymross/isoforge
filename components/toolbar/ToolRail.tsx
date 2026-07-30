@@ -2,17 +2,10 @@
 
 import {
   Box,
-  ChevronRight,
-  Circle,
   Hexagon,
   MousePointer2,
-  PaintBucket,
   PenLine,
-  Pipette,
-  ScanLine,
   Scaling,
-  Spline,
-  Square,
   Waypoints,
 } from "lucide-react";
 import { useEditorStore } from "@/stores/editor-store";
@@ -36,7 +29,7 @@ export function ToolRail() {
   const { tool, setTool } = useEditorStore();
   return (
     <nav className="tool-rail" aria-label="Ritverktyg">
-      <div className="tool-group-label">RITA</div>
+      <div className="tool-group-label">VERKTYG</div>
       {tools.map((item) => {
         const Icon = item.icon;
         return (
@@ -52,29 +45,7 @@ export function ToolRail() {
           </button>
         );
       })}
-      <div className="tool-divider" />
-      <div className="tool-group-label">FORMER</div>
-      {[
-        { label: "Rektangel", icon: Square },
-        { label: "Ellips", icon: Circle },
-        { label: "Bézier", icon: Spline },
-        { label: "Frihand", icon: ScanLine },
-      ].map(({ label, icon: Icon }) => (
-        <button key={label} className="tool-button muted" title={`${label} – kommer i nästa steg`}>
-          <Icon size={18} strokeWidth={1.8} />
-          <span>{label}</span>
-          <ChevronRight size={13} />
-        </button>
-      ))}
-      <div className="tool-divider" />
-      <button className="tool-button muted">
-        <PaintBucket size={18} />
-        <span>Fyllning</span>
-      </button>
-      <button className="tool-button muted">
-        <Pipette size={18} />
-        <span>Färgväljare</span>
-      </button>
+      <p className="tool-hint">Kortkommandon fungerar när du ritar.</p>
     </nav>
   );
 }

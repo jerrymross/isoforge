@@ -5,14 +5,11 @@ import {
   Boxes,
   Check,
   ChevronDown,
-  Copy,
   Download,
-  History,
   Moon,
   PencilRuler,
   Shield,
   Redo2,
-  Save,
   Settings2,
   Sun,
   Undo2,
@@ -62,7 +59,12 @@ export function EditorShell() {
     saveNow,
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(() =>
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.theme === "dark"
+      ? "dark"
+      : "light",
+  );
 
   useEffect(() => {
     void loadProject("default-project").then((saved) => {
@@ -73,12 +75,6 @@ export function EditorShell() {
         });
       }
     });
-  }, []);
-
-  useEffect(() => {
-    const activeTheme =
-      document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-    setTheme(activeTheme);
   }, []);
 
   useEffect(() => {
@@ -150,7 +146,6 @@ export function EditorShell() {
           >
             {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
           </button>
-          <button className="header-secondary" onClick={() => void saveNow()}><Save size={15} /> Spara</button>
           <button className="export-button" onClick={() => setExportOpen(true)}><Download size={16} /> Exportera</button>
         </div>
       </header>
@@ -198,9 +193,6 @@ export function EditorShell() {
           </select>
         </label>
         <span className="context-divider" />
-        <div><span className="swatch fill-swatch" /> Fyllning <b>{project.style.fillColor}</b></div>
-        <div><span className="swatch stroke-swatch" /> Linje <b>{project.style.strokeWidth}px</b></div>
-        <span className="context-divider" />
         <button
           className={autoTilt ? "angle-lock active" : "angle-lock"}
           onClick={() => setAutoTilt(!autoTilt)}
@@ -208,8 +200,7 @@ export function EditorShell() {
         >
           <Settings2 size={14} /> Auto-tilt <b>{autoTilt ? "26,565°" : "Av"}</b>
         </button>
-        <div><Copy size={14} /> Snäppning <b>Smart</b></div>
-        <button className="history-button"><History size={14} /> Historik</button>
+        <span className="context-note">Snäppning: Smart</span>
       </div>
 
       <div className="workspace">
@@ -229,11 +220,6 @@ export function EditorShell() {
         </div>
         <div className="right-stack"><LivePreview /><Inspector /></div>
       </div>
-      <footer className="status-bar">
-        <span><i className="ok-dot" /> Inga blockerande fel</span>
-        <span>Snäppning: <b>Tilehörn, centrum, isometriska vinklar</b></span>
-        <span>SVG · IndexedDB · Tiled 1.11</span>
-      </footer>
       <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
     </main>
   );
