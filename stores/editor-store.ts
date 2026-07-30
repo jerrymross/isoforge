@@ -287,6 +287,7 @@ type EditorState = {
   toggleCollision: (id: string) => void;
   deleteCollision: (id: string) => void;
   autoPlaceSelected: () => void;
+  autoTiltSelected: () => void;
   autoSizeSelected: () => void;
   deleteSelected: () => void;
   duplicateSelected: () => void;
@@ -553,6 +554,37 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ),
         })),
       );
+    }),
+  autoTiltSelected: () =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      if (!tile) return state;
+      const targetIds = new Set(
+        tile.objects
+          .filter(
+            (object) =>
+              !object.locked &&
+              (!state.selectedObjectId || object.id === state.selectedObjectId),
+          )
+          .map((object) => object.id),
+      );
+      if (!targetIds.size) return state;
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (activeTile) => ({
+            ...activeTile,
+            objects: activeTile.objects.map((object) =>
+              targetIds.has(object.id)
+                ? { ...object, tilt: TILED_ISOMETRIC_TILT }
+                : object,
+            ),
+          })),
+        ),
+        autoTilt: true,
+      };
     }),
   autoSizeSelected: () =>
     set((state) => {

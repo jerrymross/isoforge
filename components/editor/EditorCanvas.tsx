@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Crosshair, Maximize2, Minus, Plus } from "lucide-react";
+import { Crosshair, Maximize2, Minus, MoveDown, Plus } from "lucide-react";
 import { makeIsoBox, snapIsoLine, snapPoint } from "@/features/drawing/geometry";
 import { sortObjectsByLayer } from "@/features/layers/layer-order";
 import { useEditorStore } from "@/stores/editor-store";
@@ -52,6 +52,7 @@ export function EditorCanvas() {
     moveObject,
     setCanvasZoom,
     autoPlaceSelected,
+    autoTiltSelected,
     autoSizeSelected,
   } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId)!;
@@ -184,6 +185,17 @@ export function EditorCanvas() {
               onClick={autoPlaceSelected}
             >
               <Crosshair size={13} /> Autoplacera
+            </button>
+            <button
+              title={
+                selectedObjectId
+                  ? "Tilta markeringen 26,565° framåt för Tiled-isometri"
+                  : "Tilta alla olåsta objekt 26,565° framåt"
+              }
+              disabled={!tile.objects.length}
+              onClick={autoTiltSelected}
+            >
+              <MoveDown size={13} /> Auto-tilt
             </button>
             <button
               title={selectedObjectId ? "Skala markeringen till exportytan" : "Skala hela tilen till exportytan"}
