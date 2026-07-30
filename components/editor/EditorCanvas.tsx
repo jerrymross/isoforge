@@ -1,12 +1,21 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Crosshair, Maximize2, Minus, MoveDown, Plus } from "lucide-react";
+import {
+  Crosshair,
+  Grid2x2,
+  Magnet,
+  Maximize2,
+  Minus,
+  MoveDown,
+  Plus,
+} from "lucide-react";
 import {
   makeIsoBox,
   objectBounds,
   snapIsoLine,
   snapPoint,
+  snapPointToGrid,
   TILE_CENTER,
 } from "@/features/drawing/geometry";
 import { sortObjectsByLayer } from "@/features/layers/layer-order";
@@ -54,6 +63,8 @@ export function EditorCanvas() {
     showCollisions,
     proportionalNodes,
     canvasZoom,
+    gridSnap,
+    denseGrid,
     selectObject,
     selectCollision,
     addObject,
@@ -63,6 +74,8 @@ export function EditorCanvas() {
     moveAnchorPoint,
     moveBaseline,
     setCanvasZoom,
+    setGridSnap,
+    setDenseGrid,
     autoPlaceSelected,
     autoTiltSelected,
     autoSizeSelected,
@@ -94,6 +107,11 @@ export function EditorCanvas() {
     x: 320 - 320 / canvasZoom,
     y: 240 - 240 / canvasZoom,
   };
+  const gridSize = denseGrid ? 8 : 16;
+
+  function snapToCanvasGrid(point: Point): Point {
+    return gridSnap ? snapPointToGrid(point, gridSize) : point;
+  }
 
   const visibleObjects = sortObjectsByLayer(
     tile.objects.filter((object) => {
@@ -129,7 +147,9 @@ export function EditorCanvas() {
     ) {
       return;
     }
-    const point = snapPoint(eventPoint(event, viewBox), project);
+    const point = snapToCanvasGrid(
+      snapPoint(eventPoint(event, viewBox), project),
+    );
     event.currentTarget.setPointerCapture(event.pointerId);
     if (tool === "select" || tool === "scale" || tool === "node") {
       selectObject(null);
@@ -141,20 +161,23 @@ export function EditorCanvas() {
 
   function moveCanvas(event: React.PointerEvent<SVGSVGElement>) {
     const point = eventPoint(event, viewBox);
+    const snappedPoint = snapToCanvasGrid(point);
     if (anchorDragRef.current) {
       if (anchorDragRef.current === "baseline") {
-        moveBaseline(point.y);
+        moveBaseline(snappedPoint.y);
       } else {
-        moveAnchorPoint(anchorDragRef.current, point);
+        moveAnchorPoint(anchorDragRef.current, snappedPoint);
       }
       return;
     }
     if (nodeDragRef.current) {
       const matrix = nodeDragRef.current.coordinateElement.getScreenCTM();
       if (!matrix) return;
-      const localPoint = new DOMPoint(event.clientX, event.clientY).matrixTransform(
-        matrix.inverse(),
-      );
+      const rawLocalPoint = new DOMPoint(
+        event.clientX,
+        event.clientY,
+      ).matrixTransform(matrix.inverse());
+      const localPoint = snapToCanvasGrid(rawLocalPoint);
       if (nodeDragRef.current.proportional) {
         const distance = Math.hypot(
           localPoint.x - nodeDragRef.current.pivot.x,
@@ -180,8 +203,8 @@ export function EditorCanvas() {
     }
     if (scaleDragRef.current) {
       const distance = Math.hypot(
-        point.x - scaleDragRef.current.pivot.x,
-        point.y - scaleDragRef.current.pivot.y,
+        snappedPoint.x - scaleDragRef.current.pivot.x,
+        snappedPoint.y - scaleDragRef.current.pivot.y,
       );
       scaleObject(
         scaleDragRef.current.id,
@@ -192,8 +215,10 @@ export function EditorCanvas() {
       return;
     }
     if (dragRef.current) {
-      const dx = point.x - dragRef.current.start.x;
-      const dy = point.y - dragRef.current.start.y;
+      const rawDx = point.x - dragRef.current.start.x;
+      const rawDy = point.y - dragRef.current.start.y;
+      const dx = gridSnap ? Math.round(rawDx / gridSize) * gridSize : rawDx;
+      const dy = gridSnap ? Math.round(rawDy / gridSize) * gridSize : rawDy;
       moveObject(
         dragRef.current.id,
         dragRef.current.points.map((original) => ({
@@ -205,13 +230,13 @@ export function EditorCanvas() {
     }
     if (!start) return;
     if (tool === "line") {
-      const snapped = snapIsoLine(start, point);
+      const snapped = snapIsoLine(start, snappedPoint);
       setDraft([start, snapped.point]);
       setAngle(snapped.angle);
     } else if (tool === "iso-box") {
-      setDraft(makeIsoBox(start, point, 72));
+      setDraft(makeIsoBox(start, snappedPoint, 72));
     } else if (tool === "polygon") {
-      const snapped = snapPoint(point, project);
+      const snapped = snapToCanvasGrid(snapPoint(point, project));
       setDraft([
         start,
         { x: snapped.x + 56, y: snapped.y + 28 },
@@ -386,6 +411,24 @@ export function EditorCanvas() {
               <Maximize2 size={13} /> Autoanpassa
             </button>
           </div>
+          <div className="grid-options">
+            <button
+              className={gridSnap ? "active" : ""}
+              aria-pressed={gridSnap}
+              title="Fäst punkter och förflyttningar till rutnätet"
+              onClick={() => setGridSnap(!gridSnap)}
+            >
+              <Magnet size={13} /> Autosnap
+            </button>
+            <button
+              className={denseGrid ? "active" : ""}
+              aria-pressed={denseGrid}
+              title="Halvera rutavståndet från 16 till 8 px"
+              onClick={() => setDenseGrid(!denseGrid)}
+            >
+              <Grid2x2 size={13} /> Tätt
+            </button>
+          </div>
           <div className="canvas-zoom-control">
             <button
               aria-label="Zooma ut ritytan"
@@ -435,8 +478,16 @@ export function EditorCanvas() {
           }}
         >
           <defs>
-            <pattern id="micro-grid" width="16" height="16" patternUnits="userSpaceOnUse">
-              <path d="M 16 0 L 0 0 0 16" className="micro-grid-line" />
+            <pattern
+              id="micro-grid"
+              width={gridSize}
+              height={gridSize}
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+                className={denseGrid ? "micro-grid-line is-dense" : "micro-grid-line"}
+              />
             </pattern>
             <filter id="object-shadow" x="-30%" y="-30%" width="160%" height="160%">
               <feDropShadow dx="0" dy="8" stdDeviation="8" floodOpacity=".18" />

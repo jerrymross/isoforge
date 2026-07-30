@@ -29,6 +29,14 @@ export function pointsToString(points: Point[]): string {
   return points.map((point) => `${point.x},${point.y}`).join(" ");
 }
 
+export function snapPointToGrid(point: Point, gridSize: number): Point {
+  const safeGridSize = Math.max(1, gridSize);
+  return {
+    x: Math.round(point.x / safeGridSize) * safeGridSize,
+    y: Math.round(point.y / safeGridSize) * safeGridSize,
+  };
+}
+
 export function isoGridOffset(
   column: number,
   row: number,

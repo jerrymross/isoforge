@@ -258,6 +258,8 @@ type EditorState = {
   selectedLayerId: string;
   zoom: number;
   canvasZoom: number;
+  gridSnap: boolean;
+  denseGrid: boolean;
   previewMode: "single" | "grid";
   showGuides: boolean;
   showCollisions: boolean;
@@ -273,6 +275,8 @@ type EditorState = {
   selectCollision: (id: string | null) => void;
   setZoom: (zoom: number) => void;
   setCanvasZoom: (zoom: number) => void;
+  setGridSnap: (enabled: boolean) => void;
+  setDenseGrid: (enabled: boolean) => void;
   setPreviewMode: (mode: "single" | "grid") => void;
   toggleGuides: () => void;
   setShowCollisions: (visible: boolean) => void;
@@ -357,6 +361,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedLayerId: "base",
   zoom: 1,
   canvasZoom: 1,
+  gridSnap: true,
+  denseGrid: false,
   previewMode: "single",
   showGuides: true,
   showCollisions: false,
@@ -375,6 +381,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ selectedCollisionId, selectedObjectId: null }),
   setZoom: (zoom) => set({ zoom }),
   setCanvasZoom: (canvasZoom) => set({ canvasZoom }),
+  setGridSnap: (gridSnap) => set({ gridSnap }),
+  setDenseGrid: (denseGrid) => set({ denseGrid }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
   setShowCollisions: (showCollisions) => set({ showCollisions }),

@@ -45,6 +45,8 @@ export function EditorShell() {
     workspaceMode,
     autosaveState,
     autoTilt,
+    gridSnap,
+    denseGrid,
     history,
     future,
     setProjectName,
@@ -200,7 +202,9 @@ export function EditorShell() {
         >
           <Settings2 size={14} /> Auto-tilt <b>{autoTilt ? "26,565°" : "Av"}</b>
         </button>
-        <span className="context-note">Snäppning: Smart</span>
+        <span className="context-note">
+          Rutnät {denseGrid ? "8" : "16"} px · autosnap {gridSnap ? "på" : "av"}
+        </span>
       </div>
 
       <div className="workspace">

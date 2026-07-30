@@ -15,6 +15,7 @@ import {
   snapObjectTilt,
   snapIsoLine,
   snapPoint,
+  snapPointToGrid,
   scaleObjectFromPivot,
   tileDiamond,
   TILED_ISOMETRIC_TILT,
@@ -88,6 +89,11 @@ describe("isometrisk geometri", () => {
   it("placerar rader både framför och bakom i isometriskt djup", () => {
     expect(isoGridOffset(0, -1, 128, 64)).toEqual({ x: 64, y: -32 });
     expect(isoGridOffset(0, 1, 128, 64)).toEqual({ x: -64, y: 32 });
+  });
+
+  it("snaps to normal and dense drawing grids", () => {
+    expect(snapPointToGrid({ x: 27, y: 37 }, 16)).toEqual({ x: 32, y: 32 });
+    expect(snapPointToGrid({ x: 27, y: 37 }, 8)).toEqual({ x: 24, y: 40 });
   });
 
   it("places neighboring tile diamonds exactly edge to edge", () => {

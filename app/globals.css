@@ -944,6 +944,7 @@ button:disabled {
 }
 
 .smart-layout-actions,
+.grid-options,
 .canvas-zoom-control {
   display: flex;
   align-items: center;
@@ -954,6 +955,7 @@ button:disabled {
 }
 
 .smart-layout-actions button,
+.grid-options button,
 .canvas-zoom-control button {
   display: flex;
   align-items: center;
@@ -971,13 +973,20 @@ button:disabled {
 }
 
 .smart-layout-actions button:last-child,
+.grid-options button:last-child,
 .canvas-zoom-control button:last-child {
   border-right: 0;
 }
 
 .smart-layout-actions button:hover,
+.grid-options button:hover,
 .canvas-zoom-control button:hover {
   background: #eef1ed;
+  color: var(--teal);
+}
+
+.grid-options button.active {
+  background: var(--teal-soft);
   color: var(--teal);
 }
 
@@ -1013,6 +1022,7 @@ button:disabled {
 
 .canvas-bg { fill: #f4f4ef; }
 .micro-grid-line { fill: none; stroke: #d8ddd7; stroke-width: 0.55; }
+.micro-grid-line.is-dense { stroke: #dde1dc; stroke-width: 0.45; }
 .tile-guide { fill: rgba(73, 118, 117, 0.035); stroke: #6c9694; stroke-width: 1.2; stroke-dasharray: 6 5; }
 .center-guide { stroke: #7fa3a2; stroke-width: 0.8; stroke-dasharray: 3 5; }
 .baseline-guide { stroke: #ee6a47; stroke-width: 1.1; stroke-dasharray: 7 4; }
@@ -2668,6 +2678,7 @@ html[data-theme="dark"] .node-option.active {
 html[data-theme="dark"] .context-bar select,
 html[data-theme="dark"] .canvas-status > span,
 html[data-theme="dark"] .smart-layout-actions,
+html[data-theme="dark"] .grid-options,
 html[data-theme="dark"] .canvas-zoom-control,
 html[data-theme="dark"] .mini-search,
 html[data-theme="dark"] .library-actions > button,
@@ -2684,6 +2695,7 @@ html[data-theme="dark"] .dialog-heading > button {
 }
 
 html[data-theme="dark"] .smart-layout-actions button,
+html[data-theme="dark"] .grid-options button,
 html[data-theme="dark"] .canvas-zoom-control button,
 html[data-theme="dark"] .layer-heading-actions button,
 html[data-theme="dark"] .layer-controls button {
@@ -2697,8 +2709,14 @@ html[data-theme="dark"] .layer-controls button {
 }
 
 html[data-theme="dark"] .smart-layout-actions button:hover,
+html[data-theme="dark"] .grid-options button:hover,
 html[data-theme="dark"] .canvas-zoom-control button:hover {
   background: #26322f;
+  color: #a8d3cc;
+}
+
+html[data-theme="dark"] .grid-options button.active {
+  background: #243a36;
   color: #a8d3cc;
 }
 
@@ -2898,6 +2916,11 @@ html[data-theme="dark"] .export-options > button:hover {
   .tool-button kbd,
   .canvas-status span:nth-child(2) { display: none; }
   .smart-layout-actions button {
+    width: 29px;
+    padding: 0;
+    font-size: 0;
+  }
+  .grid-options button {
     width: 29px;
     padding: 0;
     font-size: 0;
