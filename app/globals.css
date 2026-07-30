@@ -1020,6 +1020,17 @@ button:disabled {
   touch-action: none;
 }
 
+.drawing-canvas.pen-tool {
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cpath d='M14 2 24 12 15 25l-3-8-8-3L14 2Z' fill='%23fffaf0' stroke='%23244f53' stroke-width='2'/%3E%3Ccircle cx='13.5' cy='13.5' r='2.5' fill='%23ee6a47'/%3E%3C/svg%3E")
+      4 24,
+    crosshair;
+}
+
+.drawing-canvas.pen-tool .vector-object {
+  cursor: inherit !important;
+}
+
 .canvas-bg { fill: #f4f4ef; }
 .micro-grid-line { fill: none; stroke: #d8ddd7; stroke-width: 0.55; }
 .micro-grid-line.is-dense { stroke: #dde1dc; stroke-width: 0.45; }
@@ -1086,6 +1097,49 @@ button:disabled {
   fill: #c7583b;
   font-size: 8px;
   font-weight: 800;
+}
+
+.pen-draft-path {
+  fill: none;
+  stroke: #ee6a47;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.pen-handle-line {
+  stroke: #729d98;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.pen-control {
+  fill: #fffaf0;
+  stroke: #4d817b;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.pen-node {
+  fill: #fffaf0;
+  stroke: #ee6a47;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.pen-node.can-close {
+  fill: #ee6a47;
+  stroke: #fffaf0;
+  filter: drop-shadow(0 0 4px rgba(238, 106, 71, 0.5));
+}
+
+.pen-instruction {
+  fill: #b95338;
+  font-size: 8px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: var(--canvas);
+  stroke-width: 4px;
 }
 
 .anchor-handle {
@@ -2644,6 +2698,15 @@ html[data-theme="dark"] .vector-node.is-interactive {
 }
 
 html[data-theme="dark"] .node-tool-hint {
+  fill: #f38a6d;
+}
+
+html[data-theme="dark"] .pen-control,
+html[data-theme="dark"] .pen-node {
+  fill: #202b28;
+}
+
+html[data-theme="dark"] .pen-instruction {
   fill: #f38a6d;
 }
 

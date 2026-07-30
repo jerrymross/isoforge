@@ -1,4 +1,4 @@
-import type { Point, Project, VectorObject } from "@/types/editor";
+import type { PenNode, Point, Project, VectorObject } from "@/types/editor";
 import { isValidCollision } from "@/features/collision/collision";
 
 export const CANVAS_VIEWBOX = { width: 640, height: 480 };
@@ -35,6 +35,72 @@ export function snapPointToGrid(point: Point, gridSize: number): Point {
     x: Math.round(point.x / safeGridSize) * safeGridSize,
     y: Math.round(point.y / safeGridSize) * safeGridSize,
   };
+}
+
+function samePoint(first: Point, second: Point): boolean {
+  return first.x === second.x && first.y === second.y;
+}
+
+export function penPathData(nodes: PenNode[], closed = false): string {
+  if (!nodes.length) return "";
+  const commands = [`M ${nodes[0].point.x} ${nodes[0].point.y}`];
+  const segmentCount = closed ? nodes.length : nodes.length - 1;
+  for (let index = 0; index < segmentCount; index += 1) {
+    const from = nodes[index];
+    const to = nodes[(index + 1) % nodes.length];
+    const controlA = from.outHandle ?? from.point;
+    const controlB = to.inHandle ?? to.point;
+    if (samePoint(controlA, from.point) && samePoint(controlB, to.point)) {
+      commands.push(`L ${to.point.x} ${to.point.y}`);
+    } else {
+      commands.push(
+        `C ${controlA.x} ${controlA.y} ${controlB.x} ${controlB.y} ${to.point.x} ${to.point.y}`,
+      );
+    }
+  }
+  if (closed) commands.push("Z");
+  return commands.join(" ");
+}
+
+export function samplePenPath(
+  nodes: PenNode[],
+  closed = false,
+  curveSteps = 12,
+): Point[] {
+  if (!nodes.length) return [];
+  const sampled: Point[] = [{ ...nodes[0].point }];
+  const segmentCount = closed ? nodes.length : nodes.length - 1;
+  for (let index = 0; index < segmentCount; index += 1) {
+    const from = nodes[index];
+    const to = nodes[(index + 1) % nodes.length];
+    const controlA = from.outHandle ?? from.point;
+    const controlB = to.inHandle ?? to.point;
+    if (samePoint(controlA, from.point) && samePoint(controlB, to.point)) {
+      if (!(closed && index === segmentCount - 1)) {
+        sampled.push({ ...to.point });
+      }
+      continue;
+    }
+    const steps = Math.max(2, curveSteps);
+    for (let step = 1; step <= steps; step += 1) {
+      if (closed && index === segmentCount - 1 && step === steps) continue;
+      const t = step / steps;
+      const inverse = 1 - t;
+      sampled.push({
+        x:
+          inverse ** 3 * from.point.x +
+          3 * inverse ** 2 * t * controlA.x +
+          3 * inverse * t ** 2 * controlB.x +
+          t ** 3 * to.point.x,
+        y:
+          inverse ** 3 * from.point.y +
+          3 * inverse ** 2 * t * controlA.y +
+          3 * inverse * t ** 2 * controlB.y +
+          t ** 3 * to.point.y,
+      });
+    }
+  }
+  return sampled;
 }
 
 export function isoGridOffset(

@@ -6,6 +6,7 @@ import {
   Link2,
   Link2Off,
   MousePointer2,
+  PenTool,
   PenLine,
   Scaling,
   Waypoints,
@@ -22,8 +23,9 @@ const tools: Array<{
   { id: "select", label: "Markering", icon: MousePointer2, shortcut: "V" },
   { id: "scale", label: "Skalning", icon: Scaling, shortcut: "S" },
   { id: "node", label: "Nodverktyg", icon: Waypoints, shortcut: "N" },
+  { id: "pen", label: "Ritstift", icon: PenTool, shortcut: "P" },
   { id: "line", label: "Rak linje", icon: PenLine, shortcut: "L" },
-  { id: "polygon", label: "Polygon", icon: Hexagon, shortcut: "P" },
+  { id: "polygon", label: "Polygon", icon: Hexagon, shortcut: "G" },
   { id: "iso-box", label: "Isometrisk box", icon: Box, shortcut: "B" },
 ];
 

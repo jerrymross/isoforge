@@ -13,6 +13,8 @@ import {
 import {
   makeIsoBox,
   objectBounds,
+  penPathData,
+  samplePenPath,
   snapIsoLine,
   snapPoint,
   snapPointToGrid,
@@ -20,7 +22,7 @@ import {
 } from "@/features/drawing/geometry";
 import { sortObjectsByLayer } from "@/features/layers/layer-order";
 import { useEditorStore } from "@/stores/editor-store";
-import type { Point, VectorObject } from "@/types/editor";
+import type { PenNode, Point, VectorObject } from "@/types/editor";
 import { CollisionShapeView, GuideLayer, VectorShape } from "./VectorScene";
 
 type CanvasViewBox = { x: number; y: number; width: number; height: number };
@@ -84,6 +86,9 @@ export function EditorCanvas() {
   const [start, setStart] = useState<Point | null>(null);
   const [draft, setDraft] = useState<Point[] | null>(null);
   const [angle, setAngle] = useState<number | null>(null);
+  const [penNodes, setPenNodes] = useState<PenNode[]>([]);
+  const [penPointer, setPenPointer] = useState<Point | null>(null);
+  const penDragRef = useRef<{ index: number; origin: Point } | null>(null);
   const dragRef = useRef<{ id: string; start: Point; points: Point[] } | null>(null);
   const anchorDragRef = useRef<AnchorHandle | null>(null);
   const scaleDragRef = useRef<{
@@ -111,6 +116,31 @@ export function EditorCanvas() {
 
   function snapToCanvasGrid(point: Point): Point {
     return gridSnap ? snapPointToGrid(point, gridSize) : point;
+  }
+
+  function commitClosedPen() {
+    if (penNodes.length < 3) return;
+    const object: VectorObject = {
+      id: crypto.randomUUID(),
+      name: "Ritstiftsform",
+      kind: "polygon",
+      layerId: selectedLayerId,
+      points: samplePenPath(penNodes, true, 14),
+      height: 0,
+      style: {
+        fill: project.style.fillColor,
+        stroke: project.style.strokeColor,
+        strokeWidth: project.style.strokeWidth,
+        opacity: 1,
+        shadow: false,
+      },
+      locked: false,
+    };
+    addObject(object);
+    selectObject(object.id);
+    setPenNodes([]);
+    setPenPointer(null);
+    penDragRef.current = null;
   }
 
   const visibleObjects = sortObjectsByLayer(
@@ -141,6 +171,26 @@ export function EditorCanvas() {
       if (event.target === event.currentTarget) selectCollision(null);
       return;
     }
+    if (tool === "pen") {
+      const point = snapToCanvasGrid(
+        snapPoint(eventPoint(event, viewBox), project),
+      );
+      const first = penNodes[0]?.point;
+      if (
+        first &&
+        penNodes.length >= 3 &&
+        Math.hypot(point.x - first.x, point.y - first.y) <= 10 / canvasZoom
+      ) {
+        commitClosedPen();
+        return;
+      }
+      const index = penNodes.length;
+      setPenNodes((current) => [...current, { point }]);
+      setPenPointer(point);
+      penDragRef.current = { index, origin: point };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
     if (
       event.target !== event.currentTarget &&
       (tool === "select" || tool === "scale" || tool === "node")
@@ -162,6 +212,28 @@ export function EditorCanvas() {
   function moveCanvas(event: React.PointerEvent<SVGSVGElement>) {
     const point = eventPoint(event, viewBox);
     const snappedPoint = snapToCanvasGrid(point);
+    if (tool === "pen") {
+      setPenPointer(snappedPoint);
+      if (penDragRef.current) {
+        const { index, origin } = penDragRef.current;
+        const dx = point.x - origin.x;
+        const dy = point.y - origin.y;
+        if (Math.hypot(dx, dy) >= 3 / canvasZoom) {
+          setPenNodes((current) =>
+            current.map((node, nodeIndex) =>
+              nodeIndex === index
+                ? {
+                    ...node,
+                    inHandle: { x: origin.x - dx, y: origin.y - dy },
+                    outHandle: { x: origin.x + dx, y: origin.y + dy },
+                  }
+                : node,
+            ),
+          );
+        }
+      }
+      return;
+    }
     if (anchorDragRef.current) {
       if (anchorDragRef.current === "baseline") {
         moveBaseline(snappedPoint.y);
@@ -247,6 +319,13 @@ export function EditorCanvas() {
   }
 
   function endCanvas(event: React.PointerEvent<SVGSVGElement>) {
+    if (tool === "pen") {
+      penDragRef.current = null;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      return;
+    }
     if (anchorDragRef.current || scaleDragRef.current || nodeDragRef.current) {
       anchorDragRef.current = null;
       scaleDragRef.current = null;
@@ -454,7 +533,7 @@ export function EditorCanvas() {
       </div>
       <div className="canvas-wrap">
         <svg
-          className="drawing-canvas"
+          className={tool === "pen" ? "drawing-canvas pen-tool" : "drawing-canvas"}
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
           role="img"
           aria-label="Isometrisk SVG-rityta"
@@ -475,6 +554,7 @@ export function EditorCanvas() {
             anchorDragRef.current = null;
             scaleDragRef.current = null;
             nodeDragRef.current = null;
+            penDragRef.current = null;
           }}
         >
           <defs>
@@ -540,6 +620,75 @@ export function EditorCanvas() {
                   locked: false,
                 }}
               />
+            )}
+            {tool === "pen" && penNodes.length > 0 && (
+              <g className="pen-draft" pointerEvents="none">
+                <path
+                  d={penPathData(
+                    penPointer
+                      ? [...penNodes, { point: penPointer }]
+                      : penNodes,
+                  )}
+                  className="pen-draft-path"
+                />
+                {penNodes.map((node, index) => (
+                  <g key={`pen-node-${index}`}>
+                    {node.inHandle && (
+                      <line
+                        x1={node.inHandle.x}
+                        y1={node.inHandle.y}
+                        x2={node.point.x}
+                        y2={node.point.y}
+                        className="pen-handle-line"
+                      />
+                    )}
+                    {node.outHandle && (
+                      <line
+                        x1={node.point.x}
+                        y1={node.point.y}
+                        x2={node.outHandle.x}
+                        y2={node.outHandle.y}
+                        className="pen-handle-line"
+                      />
+                    )}
+                    {node.inHandle && (
+                      <circle
+                        cx={node.inHandle.x}
+                        cy={node.inHandle.y}
+                        r="3"
+                        className="pen-control"
+                      />
+                    )}
+                    {node.outHandle && (
+                      <circle
+                        cx={node.outHandle.x}
+                        cy={node.outHandle.y}
+                        r="3"
+                        className="pen-control"
+                      />
+                    )}
+                    <circle
+                      cx={node.point.x}
+                      cy={node.point.y}
+                      r={index === 0 && penNodes.length >= 3 ? 7 : 5}
+                      className={
+                        index === 0 && penNodes.length >= 3
+                          ? "pen-node can-close"
+                          : "pen-node"
+                      }
+                    />
+                  </g>
+                ))}
+                <text
+                  x={penNodes[0].point.x}
+                  y={penNodes[0].point.y - 14}
+                  className="pen-instruction"
+                >
+                  {penNodes.length >= 3
+                    ? "Klicka första punkten för att stänga och fylla"
+                    : "Klicka för linje · dra för kurva"}
+                </text>
+              </g>
             )}
           </g>
           {tool === "scale" && selectedObject && selectedBounds && (

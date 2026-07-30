@@ -1,6 +1,19 @@
 export type Point = { x: number; y: number };
 
-export type Tool = "select" | "scale" | "node" | "line" | "polygon" | "iso-box";
+export type PenNode = {
+  point: Point;
+  inHandle?: Point;
+  outHandle?: Point;
+};
+
+export type Tool =
+  | "select"
+  | "scale"
+  | "node"
+  | "pen"
+  | "line"
+  | "polygon"
+  | "iso-box";
 
 export type WorkspaceMode = "draw" | "convert" | "objects" | "collision";
 

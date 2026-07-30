@@ -11,6 +11,8 @@ import {
   objectRotationTransform,
   objectTiltTransform,
   objectTransform,
+  penPathData,
+  samplePenPath,
   snapObjectAngle,
   snapObjectTilt,
   snapIsoLine,
@@ -94,6 +96,23 @@ describe("isometrisk geometri", () => {
   it("snaps to normal and dense drawing grids", () => {
     expect(snapPointToGrid({ x: 27, y: 37 }, 16)).toEqual({ x: 32, y: 32 });
     expect(snapPointToGrid({ x: 27, y: 37 }, 8)).toEqual({ x: 24, y: 40 });
+  });
+
+  it("builds straight and curved pen paths", () => {
+    expect(
+      penPathData([
+        { point: { x: 0, y: 0 } },
+        { point: { x: 20, y: 0 } },
+      ]),
+    ).toBe("M 0 0 L 20 0");
+    const curved = [
+      { point: { x: 0, y: 0 }, outHandle: { x: 10, y: -10 } },
+      { point: { x: 20, y: 0 }, inHandle: { x: 10, y: 10 } },
+      { point: { x: 10, y: 20 } },
+    ];
+    expect(penPathData(curved, true)).toContain("C 10 -10 10 10 20 0");
+    expect(penPathData(curved, true).endsWith("Z")).toBe(true);
+    expect(samplePenPath(curved, true, 4).length).toBeGreaterThan(3);
   });
 
   it("places neighboring tile diamonds exactly edge to edge", () => {

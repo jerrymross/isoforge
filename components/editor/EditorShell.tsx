@@ -32,8 +32,9 @@ const toolKeys: Record<string, Tool> = {
   v: "select",
   s: "scale",
   n: "node",
+  p: "pen",
   l: "line",
-  p: "polygon",
+  g: "polygon",
   b: "iso-box",
 };
 
