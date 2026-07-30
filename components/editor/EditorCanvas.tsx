@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import {
   Crosshair,
+  Eye,
+  EyeOff,
   Grid2x2,
   Magnet,
   Maximize2,
@@ -85,6 +87,7 @@ export function EditorCanvas() {
     setCanvasZoom,
     setGridSnap,
     setDenseGrid,
+    toggleGuides,
     autoPlaceSelected,
     autoTiltSelected,
     autoSizeSelected,
@@ -513,6 +516,15 @@ export function EditorCanvas() {
               onClick={() => setDenseGrid(!denseGrid)}
             >
               <Grid2x2 size={13} /> Tätt
+            </button>
+            <button
+              className={showGuides ? "active" : ""}
+              aria-pressed={showGuides}
+              title="Visa eller dölj guider och ankarpunkter"
+              onClick={toggleGuides}
+            >
+              {showGuides ? <Eye size={13} /> : <EyeOff size={13} />}
+              Guider
             </button>
           </div>
           <div className="canvas-zoom-control">

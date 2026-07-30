@@ -256,7 +256,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   gridSnap: true,
   denseGrid: false,
   previewMode: "single",
-  showGuides: true,
+  showGuides: false,
   showCollisions: false,
   autoAngle: true,
   autoTilt: true,
