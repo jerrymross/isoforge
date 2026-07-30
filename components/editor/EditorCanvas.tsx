@@ -52,6 +52,7 @@ export function EditorCanvas() {
     selectedLayerId,
     showGuides,
     showCollisions,
+    proportionalNodes,
     canvasZoom,
     selectObject,
     selectCollision,
@@ -84,6 +85,8 @@ export function EditorCanvas() {
     pivot: Point;
     startDistance: number;
     coordinateElement: SVGGraphicsElement;
+    pointIndex: number;
+    proportional: boolean;
   } | null>(null);
   const viewBox: CanvasViewBox = {
     width: 640 / canvasZoom,
@@ -152,16 +155,27 @@ export function EditorCanvas() {
       const localPoint = new DOMPoint(event.clientX, event.clientY).matrixTransform(
         matrix.inverse(),
       );
-      const distance = Math.hypot(
-        localPoint.x - nodeDragRef.current.pivot.x,
-        localPoint.y - nodeDragRef.current.pivot.y,
-      );
-      scaleObject(
-        nodeDragRef.current.id,
-        nodeDragRef.current.source,
-        nodeDragRef.current.pivot,
-        distance / nodeDragRef.current.startDistance,
-      );
+      if (nodeDragRef.current.proportional) {
+        const distance = Math.hypot(
+          localPoint.x - nodeDragRef.current.pivot.x,
+          localPoint.y - nodeDragRef.current.pivot.y,
+        );
+        scaleObject(
+          nodeDragRef.current.id,
+          nodeDragRef.current.source,
+          nodeDragRef.current.pivot,
+          distance / nodeDragRef.current.startDistance,
+        );
+      } else {
+        moveObject(
+          nodeDragRef.current.id,
+          nodeDragRef.current.source.points.map((sourcePoint, index) =>
+            index === nodeDragRef.current?.pointIndex
+              ? { x: localPoint.x, y: localPoint.y }
+              : sourcePoint,
+          ),
+        );
+      }
       return;
     }
     if (scaleDragRef.current) {
@@ -331,6 +345,8 @@ export function EditorCanvas() {
         Math.hypot(handle.x - pivot.x, handle.y - pivot.y),
       ),
       coordinateElement,
+      pointIndex,
+      proportional: proportionalNodes,
     };
     svg.setPointerCapture(event.pointerId);
   }
@@ -514,7 +530,9 @@ export function EditorCanvas() {
               y={(selectedBounds?.minY ?? TILE_CENTER.y) - 13}
               pointerEvents="none"
             >
-              Dra en punkt – proportionerna bevaras
+              {proportionalNodes
+                ? "Dra en punkt – proportionerna bevaras"
+                : "Dra en punkt – fri omformning"}
             </text>
           )}
           {showGuides && (

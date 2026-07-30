@@ -809,6 +809,38 @@ button:disabled {
   line-height: 1.5;
 }
 
+.node-option {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  width: calc(100% - 4px);
+  min-height: 42px;
+  margin: 12px 2px 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: #65726f;
+  padding: 0 7px;
+  font-size: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.node-option b {
+  color: #8c9693;
+  font-size: 8px;
+}
+
+.node-option.active {
+  border-color: #a9c5bf;
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.node-option.active b {
+  color: var(--teal);
+}
+
 .center-stack,
 .right-stack {
   display: grid;
@@ -2617,6 +2649,18 @@ html[data-theme="dark"] .layer-row:hover {
 
 html[data-theme="dark"] .tool-button.active,
 html[data-theme="dark"] .layer-row.active {
+  background: #243a36;
+  color: #a8d3cc;
+}
+
+html[data-theme="dark"] .node-option {
+  border-color: #384743;
+  background: #1d2825;
+  color: #aab7b3;
+}
+
+html[data-theme="dark"] .node-option.active {
+  border-color: #4f716b;
   background: #243a36;
   color: #a8d3cc;
 }

@@ -263,6 +263,7 @@ type EditorState = {
   showCollisions: boolean;
   autoAngle: boolean;
   autoTilt: boolean;
+  proportionalNodes: boolean;
   history: Project[];
   future: Project[];
   autosaveState: "saved" | "saving";
@@ -277,6 +278,7 @@ type EditorState = {
   setShowCollisions: (visible: boolean) => void;
   setAutoAngle: (enabled: boolean) => void;
   setAutoTilt: (enabled: boolean) => void;
+  setProportionalNodes: (enabled: boolean) => void;
   addObject: (object: VectorObject) => void;
   addObjects: (objects: VectorObject[]) => void;
   updateObject: (id: string, patch: Partial<VectorObject>) => void;
@@ -360,6 +362,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   showCollisions: false,
   autoAngle: true,
   autoTilt: true,
+  proportionalNodes: true,
   history: [],
   future: [],
   autosaveState: "saved",
@@ -376,6 +379,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
   setShowCollisions: (showCollisions) => set({ showCollisions }),
   setAutoAngle: (autoAngle) => set({ autoAngle }),
+  setProportionalNodes: (proportionalNodes) => set({ proportionalNodes }),
   setAutoTilt: (autoTilt) =>
     set((state) => {
       if (!autoTilt || !state.selectedObjectId) return { autoTilt };

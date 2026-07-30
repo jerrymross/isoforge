@@ -3,6 +3,8 @@
 import {
   Box,
   Hexagon,
+  Link2,
+  Link2Off,
   MousePointer2,
   PenLine,
   Scaling,
@@ -26,7 +28,12 @@ const tools: Array<{
 ];
 
 export function ToolRail() {
-  const { tool, setTool } = useEditorStore();
+  const {
+    tool,
+    proportionalNodes,
+    setTool,
+    setProportionalNodes,
+  } = useEditorStore();
   return (
     <nav className="tool-rail" aria-label="Ritverktyg">
       <div className="tool-group-label">VERKTYG</div>
@@ -45,6 +52,18 @@ export function ToolRail() {
           </button>
         );
       })}
+      {tool === "node" && (
+        <button
+          className={proportionalNodes ? "node-option active" : "node-option"}
+          aria-pressed={proportionalNodes}
+          onClick={() => setProportionalNodes(!proportionalNodes)}
+          title="Växla mellan proportionell och fri punktredigering"
+        >
+          {proportionalNodes ? <Link2 size={14} /> : <Link2Off size={14} />}
+          <span>Behåll proportioner</span>
+          <b>{proportionalNodes ? "På" : "Av"}</b>
+        </button>
+      )}
       <p className="tool-hint">Kortkommandon fungerar när du ritar.</p>
     </nav>
   );
