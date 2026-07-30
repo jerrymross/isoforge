@@ -7,6 +7,10 @@ import {
   tileDiamond,
 } from "@/features/drawing/geometry";
 import { collisionBounds } from "@/features/collision/collision";
+import {
+  effectiveObjectOpacity,
+  sortObjectsByLayer,
+} from "@/features/layers/layer-order";
 
 function escapeXml(value: string): string {
   return value
@@ -79,9 +83,19 @@ export function projectToSvg(
        <line x1="${TILE_CENTER.x - project.tileWidth / 2}" y1="${tile.anchor.baseline}" x2="${TILE_CENTER.x + project.tileWidth / 2}" y2="${tile.anchor.baseline}" stroke="#e86a48" stroke-width="1"/>
        <circle cx="${tile.anchor.image.x}" cy="${tile.anchor.image.y}" r="4" fill="#e86a48"/>`
     : "";
-  const objects = tile.objects
-    .filter((object) => visibleLayers.has(object.layerId))
-    .map(renderObject)
+  const objects = sortObjectsByLayer(
+    tile.objects.filter((object) => visibleLayers.has(object.layerId)),
+    tile.layers,
+  )
+    .map((object) =>
+      renderObject({
+        ...object,
+        style: {
+          ...object.style,
+          opacity: effectiveObjectOpacity(object, tile.layers),
+        },
+      }),
+    )
     .join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480">
     ${guides}${objects}

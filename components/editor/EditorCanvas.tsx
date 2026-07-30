@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Crosshair, Maximize2, Minus, Plus } from "lucide-react";
 import { makeIsoBox, snapIsoLine, snapPoint } from "@/features/drawing/geometry";
+import { sortObjectsByLayer } from "@/features/layers/layer-order";
 import { useEditorStore } from "@/stores/editor-store";
 import type { Point, VectorObject } from "@/types/editor";
 import { CollisionShapeView, GuideLayer, VectorShape } from "./VectorScene";
@@ -65,10 +66,13 @@ export function EditorCanvas() {
     y: 240 - 240 / canvasZoom,
   };
 
-  const visibleObjects = tile.objects.filter((object) => {
-    const layer = tile.layers.find((item) => item.id === object.layerId);
-    return layer?.visible !== false;
-  });
+  const visibleObjects = sortObjectsByLayer(
+    tile.objects.filter((object) => {
+      const layer = tile.layers.find((item) => item.id === object.layerId);
+      return layer?.visible !== false;
+    }),
+    tile.layers,
+  );
 
   function beginCanvas(event: React.PointerEvent<SVGSVGElement>) {
     if (event.button !== 0) return;
@@ -256,6 +260,10 @@ export function EditorCanvas() {
               <VectorShape
                 key={object.id}
                 object={object}
+                layerOpacity={
+                  tile.layers.find((layer) => layer.id === object.layerId)
+                    ?.opacity ?? 1
+                }
                 selected={selectedObjectId === object.id}
                 onPointerDown={(event) => beginObjectDrag(event, object)}
               />

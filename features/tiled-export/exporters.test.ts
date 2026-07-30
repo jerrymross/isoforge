@@ -33,4 +33,20 @@ describe("Tiled-export", () => {
     const svg = projectToSvg(project, project.tiles[0]);
     expect(svg).toContain('transform="rotate(26.565');
   });
+
+  it("exports objects in layer order with effective layer opacity", () => {
+    const project = createDefaultProject();
+    const tile = project.tiles[0];
+    tile.layers.find((layer) => layer.id === "base")!.opacity = 0.5;
+    tile.objects.push({
+      ...tile.objects[0],
+      id: "shadow-copy",
+      name: "Shadow",
+      layerId: "shadow",
+      style: { ...tile.objects[0].style, fill: "#111111" },
+    });
+    const svg = projectToSvg(project, tile);
+    expect(svg.indexOf("#111111")).toBeLessThan(svg.indexOf("#e9a85d"));
+    expect(svg).toContain('opacity="0.5"');
+  });
 });

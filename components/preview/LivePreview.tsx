@@ -9,6 +9,7 @@ import {
   tileDiamond,
 } from "@/features/drawing/geometry";
 import { useEditorStore } from "@/stores/editor-store";
+import { sortObjectsByLayer } from "@/features/layers/layer-order";
 import type { Tile } from "@/types/editor";
 import {
   CollisionShapeView,
@@ -31,6 +32,8 @@ export function LivePreview() {
     setShowCollisions,
   } = useEditorStore();
   const [fillMode, setFillMode] = useState<FillMode>("repeat");
+  const [sortTest, setSortTest] = useState(false);
+  const [sortTestY, setSortTestY] = useState(300);
   const tile = project.tiles.find((item) => item.id === project.activeTileId)!;
   const collectionTiles = project.tiles.filter(
     (item) => item.collectionId === tile.collectionId,
@@ -77,10 +80,13 @@ export function LivePreview() {
   ]);
 
   function visibleObjects(previewTile: Tile) {
-    return previewTile.objects.filter((object) => {
-      const layer = previewTile.layers.find((item) => item.id === object.layerId);
-      return layer?.visible !== false;
-    });
+    return sortObjectsByLayer(
+      previewTile.objects.filter((object) => {
+        const layer = previewTile.layers.find((item) => item.id === object.layerId);
+        return layer?.visible !== false;
+      }),
+      previewTile.layers,
+    );
   }
 
   const floorPoints = pointsToString(
@@ -126,11 +132,24 @@ export function LivePreview() {
                   strokeWidth={isCenter ? 1.6 : 1}
                   vectorEffect="non-scaling-stroke"
                 />
+                {isCenter && sortTest && sortTestY < cell.tile.anchor.sort.y && (
+                  <SortTestFigure x={cell.tile.anchor.sort.x} y={sortTestY} />
+                )}
                 <g filter="url(#preview-object-shadow)">
                   {visibleObjects(cell.tile).map((object) => (
-                    <VectorShape key={`${cell.column}-${cell.row}-${object.id}`} object={object} />
+                    <VectorShape
+                      key={`${cell.column}-${cell.row}-${object.id}`}
+                      object={object}
+                      layerOpacity={
+                        cell.tile.layers.find((layer) => layer.id === object.layerId)
+                          ?.opacity ?? 1
+                      }
+                    />
                   ))}
                 </g>
+                {isCenter && sortTest && sortTestY >= cell.tile.anchor.sort.y && (
+                  <SortTestFigure x={cell.tile.anchor.sort.x} y={sortTestY} />
+                )}
                 {showCollisions && (
                   <g className="collision-overlay preview-collisions">
                     {cell.tile.collisions
@@ -222,7 +241,45 @@ export function LivePreview() {
             onChange={(event) => setShowCollisions(event.target.checked)}
           />
         </label>
+        <label className="toggle-row">
+          <span>Sorteringstest</span>
+          <input
+            type="checkbox"
+            checked={sortTest}
+            onChange={(event) => setSortTest(event.target.checked)}
+          />
+        </label>
+        {sortTest && (
+          <label className="sort-test-control">
+            <span>
+              Testfigur: {sortTestY < tile.anchor.sort.y ? "bakom" : "framför"}
+            </span>
+            <input
+              type="range"
+              min="230"
+              max="380"
+              value={sortTestY}
+              onChange={(event) => setSortTestY(Number(event.target.value))}
+            />
+          </label>
+        )}
       </div>
     </aside>
+  );
+}
+
+function SortTestFigure({ x, y }: { x: number; y: number }) {
+  return (
+    <g
+      className="sort-test-figure"
+      transform={`translate(${x} ${y})`}
+      pointerEvents="none"
+    >
+      <ellipse cx="0" cy="4" rx="15" ry="7" className="sort-figure-shadow" />
+      <path d="M -8 -34 Q 0 -42 8 -34 L 10 -10 Q 0 -4 -10 -10 Z" className="sort-figure-body" />
+      <circle cx="0" cy="-43" r="9" className="sort-figure-head" />
+      <path d="M -5 -4 L -6 4 M 5 -4 L 6 4" className="sort-figure-feet" />
+      <circle r="3" className="sort-figure-point" />
+    </g>
   );
 }

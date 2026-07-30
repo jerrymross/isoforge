@@ -13,14 +13,20 @@ import { shade } from "@/features/tiled-export/exporters";
 type VectorShapeProps = {
   object: VectorObject;
   selected?: boolean;
+  layerOpacity?: number;
   onPointerDown?: (event: React.PointerEvent<SVGGElement>) => void;
 };
 
-export function VectorShape({ object, selected, onPointerDown }: VectorShapeProps) {
+export function VectorShape({
+  object,
+  selected,
+  layerOpacity = 1,
+  onPointerDown,
+}: VectorShapeProps) {
   const common = {
     stroke: object.style.stroke,
     strokeWidth: object.style.strokeWidth,
-    opacity: object.style.opacity,
+    opacity: object.style.opacity * layerOpacity,
     strokeLinejoin: "round" as const,
     vectorEffect: "non-scaling-stroke" as const,
   };
@@ -220,6 +226,10 @@ export function GuideLayer({ tile, tileWidth, tileHeight, compact }: GuideLayerP
       <g transform={`translate(${tile.anchor.image.x} ${tile.anchor.image.y})`}>
         <circle r="7" className="anchor-ring" />
         <path d="M -11 0 H 11 M 0 -11 V 11" className="anchor-cross" />
+      </g>
+      <g transform={`translate(${tile.anchor.sort.x} ${tile.anchor.sort.y})`}>
+        <path d="M 0 -7 L 7 0 L 0 7 L -7 0 Z" className="sort-anchor" />
+        {!compact && <text x="11" y="3" className="sort-anchor-label">SORT</text>}
       </g>
     </g>
   );

@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import type {
+  Anchor,
   CollisionKind,
   CollisionShape,
   Layer,
@@ -284,7 +285,14 @@ type EditorState = {
   deleteSelected: () => void;
   duplicateSelected: () => void;
   toggleLayer: (id: string, field: "visible" | "locked") => void;
+  addLayer: () => void;
+  duplicateLayer: (id: string) => void;
+  deleteLayer: (id: string) => void;
+  moveLayer: (id: string, direction: "up" | "down") => void;
+  setLayerOpacity: (id: string, opacity: number) => void;
   setSelectedLayer: (id: string) => void;
+  setAnchorPoint: (kind: "image" | "tile" | "sort", point: Point) => void;
+  setBaseline: (baseline: number) => void;
   setProjectName: (name: string) => void;
   setTileSize: (width: number, height: number) => void;
   selectTile: (id: string) => void;
@@ -581,7 +589,140 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         })),
       ),
     ),
+  addLayer: () =>
+    set((state) => {
+      const layer: Layer = {
+        id: newId(),
+        name: `Lager ${state.project.tiles.find((tile) => tile.id === state.project.activeTileId)!.layers.length + 1}`,
+        visible: true,
+        locked: false,
+        opacity: 1,
+      };
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (tile) => ({
+            ...tile,
+            layers: [...tile.layers, layer],
+          })),
+        ),
+        selectedLayerId: layer.id,
+      };
+    }),
+  duplicateLayer: (id) =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      const source = tile?.layers.find((layer) => layer.id === id);
+      if (!tile || !source) return state;
+      const layer: Layer = { ...source, id: newId(), name: `${source.name} kopia` };
+      const sourceIndex = tile.layers.findIndex((item) => item.id === id);
+      const copies = tile.objects
+        .filter((object) => object.layerId === id)
+        .map((object) => ({
+          ...object,
+          id: newId(),
+          name: `${object.name} kopia`,
+          layerId: layer.id,
+          points: object.points.map((point) => ({ ...point })),
+          style: { ...object.style },
+        }));
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (activeTile) => ({
+            ...activeTile,
+            layers: [
+              ...activeTile.layers.slice(0, sourceIndex + 1),
+              layer,
+              ...activeTile.layers.slice(sourceIndex + 1),
+            ],
+            objects: [...activeTile.objects, ...copies],
+          })),
+        ),
+        selectedLayerId: layer.id,
+        selectedObjectId: copies[0]?.id ?? null,
+      };
+    }),
+  deleteLayer: (id) =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      if (!tile || tile.layers.length <= 1) return state;
+      const fallback = tile.layers.find((layer) => layer.id !== id)!;
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (activeTile) => ({
+            ...activeTile,
+            layers: activeTile.layers.filter((layer) => layer.id !== id),
+            objects: activeTile.objects.map((object) =>
+              object.layerId === id
+                ? { ...object, layerId: fallback.id }
+                : object,
+            ),
+          })),
+        ),
+        selectedLayerId:
+          state.selectedLayerId === id ? fallback.id : state.selectedLayerId,
+      };
+    }),
+  moveLayer: (id, direction) =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      if (!tile) return state;
+      const index = tile.layers.findIndex((layer) => layer.id === id);
+      const target = direction === "up" ? index + 1 : index - 1;
+      if (index < 0 || target < 0 || target >= tile.layers.length) return state;
+      const layers = [...tile.layers];
+      [layers[index], layers[target]] = [layers[target], layers[index]];
+      return snapshot(
+        state,
+        updateActiveTile(state.project, (activeTile) => ({
+          ...activeTile,
+          layers,
+        })),
+      );
+    }),
+  setLayerOpacity: (id, opacity) =>
+    set((state) =>
+      snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          layers: tile.layers.map((layer) =>
+            layer.id === id
+              ? { ...layer, opacity: Math.max(0, Math.min(1, opacity)) }
+              : layer,
+          ),
+        })),
+      ),
+    ),
   setSelectedLayer: (selectedLayerId) => set({ selectedLayerId }),
+  setAnchorPoint: (kind, point) =>
+    set((state) =>
+      snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          anchor: { ...tile.anchor, [kind]: point } as Anchor,
+        })),
+      ),
+    ),
+  setBaseline: (baseline) =>
+    set((state) =>
+      snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          anchor: { ...tile.anchor, baseline },
+        })),
+      ),
+    ),
   setProjectName: (name) =>
     set((state) => ({
       project: { ...state.project, name, updatedAt: now() },

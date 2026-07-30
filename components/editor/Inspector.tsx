@@ -5,6 +5,7 @@ import {
   Link2,
   Magnet,
   RotateCw,
+  ScanLine,
   SlidersHorizontal,
 } from "lucide-react";
 import { validateProject } from "@/features/drawing/geometry";
@@ -18,6 +19,8 @@ export function Inspector() {
     updateObject,
     setObjectAngle,
     setAutoAngle,
+    setAnchorPoint,
+    setBaseline,
   } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId)!;
   const selected = tile.objects.find((object) => object.id === selectedObjectId);
@@ -160,6 +163,49 @@ export function Inspector() {
             ? "Snappar till horisontell, vertikal och isometriska riktningar."
             : "Fri rotation i valfri vinkel."}
         </small>
+      </div>
+      <div className="depth-editor">
+        <div className="depth-editor-heading">
+          <ScanLine size={13} />
+          Sortering och baslinje
+        </div>
+        <div className="depth-fields">
+          <label>
+            <span>Sort X</span>
+            <input
+              type="number"
+              value={Math.round(tile.anchor.sort.x)}
+              onChange={(event) =>
+                setAnchorPoint("sort", {
+                  ...tile.anchor.sort,
+                  x: Number(event.target.value),
+                })
+              }
+            />
+          </label>
+          <label>
+            <span>Sort Y</span>
+            <input
+              type="number"
+              value={Math.round(tile.anchor.sort.y)}
+              onChange={(event) =>
+                setAnchorPoint("sort", {
+                  ...tile.anchor.sort,
+                  y: Number(event.target.value),
+                })
+              }
+            />
+          </label>
+          <label className="baseline-field">
+            <span>Baslinje</span>
+            <input
+              type="number"
+              value={Math.round(tile.anchor.baseline)}
+              onChange={(event) => setBaseline(Number(event.target.value))}
+            />
+          </label>
+        </div>
+        <small>Den orange testfiguren växlar automatiskt mellan bakom och framför vid sorteringspunkten.</small>
       </div>
       <div className={issues.length ? "validation-mini warning" : "validation-mini"}>
         <AlertTriangle size={14} />
