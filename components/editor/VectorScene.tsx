@@ -186,8 +186,8 @@ export function VectorShape({
             fill={shade(object.style.fill, -32)}
             {...common}
           />
-          <UvCellOverlay object={object} face="right" quad={[object.points[1], object.points[4], object.points[5], object.points[2]]} />
-          <UvVectorOverlay object={object} face="right" quad={[object.points[1], object.points[4], object.points[5], object.points[2]]} />
+          <UvCellOverlay object={object} face="right" quad={[object.points[2], object.points[1], object.points[4], object.points[5]]} />
+          <UvVectorOverlay object={object} face="right" quad={[object.points[2], object.points[1], object.points[4], object.points[5]]} />
           <polygon
             points={pointsToString(object.points.slice(0, 4))}
             fill={shade(object.style.fill, 12)}

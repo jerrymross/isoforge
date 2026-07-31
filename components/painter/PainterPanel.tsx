@@ -17,9 +17,45 @@ function modelFacePoints(object: VectorObject, face: FaceId): Point[] {
   if (object.kind === "iso-box" && object.points.length >= 7) {
     if (face === "top") return object.points.slice(0, 4);
     if (face === "left") return [object.points[3], object.points[2], object.points[5], object.points[6]];
-    return [object.points[1], object.points[4], object.points[5], object.points[2]];
+    return [object.points[2], object.points[1], object.points[4], object.points[5]];
   }
   return object.points;
+}
+
+function painterObjectMetrics(object: VectorObject) {
+  if (!object.points.length) return { centerX: 0, centerY: 0, balance: 1, direction: 0 };
+  const centerX = object.points.reduce((sum, point) => sum + point.x, 0) / object.points.length;
+  const centerY = object.points.reduce((sum, point) => sum + point.y, 0) / object.points.length;
+  let rising = 0;
+  let falling = 0;
+  object.points.forEach((point, index) => {
+    const next = object.points[(index + 1) % object.points.length];
+    const dx = next.x - point.x;
+    const dy = next.y - point.y;
+    if (Math.abs(dx) < 0.001 || Math.abs(dy) < 0.001) return;
+    if (dx * dy > 0) rising += Math.abs(dx);
+    else falling += Math.abs(dx);
+  });
+  const diagonalLength = rising + falling;
+  return {
+    centerX,
+    centerY,
+    balance: diagonalLength ? Math.abs(rising - falling) / diagonalLength : 1,
+    direction: diagonalLength ? (rising - falling) / diagonalLength : 0,
+  };
+}
+
+function sortPainterObjects(objects: VectorObject[]): VectorObject[] {
+  if (objects.length < 2) return objects;
+  const measured = objects.map((object) => ({ object, ...painterObjectMetrics(object) }));
+  if (objects.length < 3) {
+    return measured.sort((a, b) => a.centerX - b.centerX || a.centerY - b.centerY).map((item) => item.object);
+  }
+  const top = [...measured].sort((a, b) => a.balance - b.balance || a.centerY - b.centerY)[0];
+  const sides = measured
+    .filter((item) => item.object.id !== top.object.id)
+    .sort((a, b) => b.direction - a.direction || a.centerX - b.centerX || a.centerY - b.centerY);
+  return [top, ...sides].map((item) => item.object);
 }
 
 function projectedFacePoints(object: VectorObject, face: FaceId): Point[] {
@@ -129,7 +165,7 @@ function makePaint(object: VectorObject): UvPaint {
 export function PainterPanel() {
   const { project, selectedObjectId, selectedObjectIds, updateObject, setWorkspaceMode } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId);
-  const selectedObjects = tile?.objects.filter((item) => selectedObjectIds.includes(item.id)) ?? [];
+  const selectedObjects = sortPainterObjects(tile?.objects.filter((item) => selectedObjectIds.includes(item.id)) ?? []);
   const [painterObjectId, setPainterObjectId] = useState<string | null>(() => selectedObjects.length >= 3 ? selectedObjects[0].id : selectedObjectId);
   const object = selectedObjects.find((item) => item.id === painterObjectId)
     ?? tile?.objects.find((item) => item.id === selectedObjectId);
