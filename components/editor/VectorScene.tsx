@@ -20,6 +20,37 @@ function uvFaceColor(object: VectorObject, face: "top" | "left" | "right"): stri
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? object.style.fill;
 }
 
+function paintPatternId(object: VectorObject, face: "top" | "left" | "right") {
+  return `uv-${object.id.replace(/[^a-zA-Z0-9_-]/g, "")}-${face}`;
+}
+
+function UvPattern({ object, face }: { object: VectorObject; face: "top" | "left" | "right" }) {
+  const cells = object.uvPaint?.[face];
+  const size = object.uvPaint?.size ?? 12;
+  if (!cells?.length) return null;
+  return (
+    <pattern
+      id={paintPatternId(object, face)}
+      patternUnits="objectBoundingBox"
+      patternContentUnits="userSpaceOnUse"
+      width="1"
+      height="1"
+      viewBox={`0 0 ${size} ${size}`}
+    >
+      {cells.map((color, index) => (
+        <rect
+          key={`${face}-${index}`}
+          x={index % size}
+          y={Math.floor(index / size)}
+          width="1"
+          height="1"
+          fill={color}
+        />
+      ))}
+    </pattern>
+  );
+}
+
 type VectorShapeProps = {
   object: VectorObject;
   selected?: boolean;
@@ -55,6 +86,13 @@ export function VectorShape({
       onPointerDown={onPointerDown}
       style={{ cursor: object.locked ? "not-allowed" : "grab" }}
     >
+      {object.uvPaint && (
+        <defs>
+          <UvPattern object={object} face="top" />
+          <UvPattern object={object} face="left" />
+          <UvPattern object={object} face="right" />
+        </defs>
+      )}
       {object.kind === "line" && object.points.length >= 2 ? (
         <line
           x1={object.points[0].x}
@@ -106,7 +144,7 @@ export function VectorShape({
               object.points[5],
               object.points[6],
             ])}
-            fill={shade(uvFaceColor(object, "left"), -18)}
+            fill={object.uvPaint ? `url(#${paintPatternId(object, "left")})` : shade(object.style.fill, -18)}
             {...common}
           />
           <polygon
@@ -116,17 +154,21 @@ export function VectorShape({
               object.points[5],
               object.points[2],
             ])}
-            fill={shade(uvFaceColor(object, "right"), -32)}
+            fill={object.uvPaint ? `url(#${paintPatternId(object, "right")})` : shade(object.style.fill, -32)}
             {...common}
           />
           <polygon
             points={pointsToString(object.points.slice(0, 4))}
-            fill={shade(uvFaceColor(object, "top"), 12)}
+            fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : shade(object.style.fill, 12)}
             {...common}
           />
         </>
       ) : (
-        <polygon points={pointsToString(object.points)} fill={uvFaceColor(object, "top")} {...common} />
+        <polygon
+          points={pointsToString(object.points)}
+          fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : uvFaceColor(object, "top")}
+          {...common}
+        />
       )}
       {selected && (
         <>
