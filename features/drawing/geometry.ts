@@ -72,15 +72,29 @@ export function tileGuideFaces(
 ): Point[][] {
   const primary = tileGuidePolygon(mode, width, height, baseline);
 
-  if (mode === "floor" || mode === "floor-object") {
+  if (mode === "floor") {
+    const top = primary;
+    const lower = top.map((point) => ({
+      x: point.x,
+      y: point.y + height / 2,
+    }));
+    return [
+      top,
+      [top[0], top[1], lower[1], lower[0]],
+      [top[1], top[2], lower[2], lower[1]],
+      [top[2], top[3], lower[3], lower[2]],
+      [top[3], top[0], lower[0], lower[3]],
+    ];
+  }
+
+  if (mode === "floor-object") {
     const lower = tileDiamond(width, height, {
       x: TILE_CENTER.x,
       y: baseline - height / 2,
     });
-    const blockHeight = mode === "floor" ? height / 2 : height;
     const top = lower.map((point) => ({
       x: point.x,
-      y: point.y - blockHeight,
+      y: point.y - height,
     }));
     return [
       top,

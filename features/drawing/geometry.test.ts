@@ -98,8 +98,16 @@ describe("isometrisk geometri", () => {
 
     expect(floorFaces).toHaveLength(5);
     expect(blockFaces).toHaveLength(5);
-    expect(floorFaces[0][2].y).toBe(304);
+    expect(floorFaces[0][2].y).toBe(336);
+    expect(floorFaces[1][2].y - floorFaces[1][1].y).toBe(32);
     expect(blockFaces[0][2].y).toBe(272);
+    expect(floorFaces[0]).toEqual(tileDiamond(128, 64, { x: 320, y: 304 }));
+    expect(floorFaces[0]).toEqual([
+      blockFaces[1][3],
+      blockFaces[1][2],
+      blockFaces[2][2],
+      blockFaces[3][2],
+    ]);
     expect(wallLeftFaces).toHaveLength(6);
     expect(wallRightFaces).toHaveLength(6);
     expect(wallLeftFaces[1][0].x - wallLeftFaces[0][0].x).toBe(32);
