@@ -154,6 +154,7 @@ type EditorState = {
   denseGrid: boolean;
   previewMode: "single" | "grid";
   showGuides: boolean;
+  showAnchors: boolean;
   showCollisions: boolean;
   autoAngle: boolean;
   autoTilt: boolean;
@@ -171,6 +172,7 @@ type EditorState = {
   setDenseGrid: (enabled: boolean) => void;
   setPreviewMode: (mode: "single" | "grid") => void;
   toggleGuides: () => void;
+  toggleAnchors: () => void;
   setShowCollisions: (visible: boolean) => void;
   setAutoAngle: (enabled: boolean) => void;
   setAutoTilt: (enabled: boolean) => void;
@@ -257,6 +259,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   denseGrid: false,
   previewMode: "single",
   showGuides: false,
+  showAnchors: false,
   showCollisions: false,
   autoAngle: true,
   autoTilt: true,
@@ -277,6 +280,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setDenseGrid: (denseGrid) => set({ denseGrid }),
   setPreviewMode: (previewMode) => set({ previewMode }),
   toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
+  toggleAnchors: () => set((state) => ({ showAnchors: !state.showAnchors })),
   setShowCollisions: (showCollisions) => set({ showCollisions }),
   setAutoAngle: (autoAngle) => set({ autoAngle }),
   setProportionalNodes: (proportionalNodes) => set({ proportionalNodes }),

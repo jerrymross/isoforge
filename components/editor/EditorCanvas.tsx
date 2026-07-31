@@ -71,6 +71,7 @@ export function EditorCanvas() {
     selectedCollisionId,
     selectedLayerId,
     showGuides,
+    showAnchors,
     showCollisions,
     proportionalNodes,
     canvasZoom,
@@ -88,6 +89,7 @@ export function EditorCanvas() {
     setGridSnap,
     setDenseGrid,
     toggleGuides,
+    toggleAnchors,
     autoPlaceSelected,
     autoTiltSelected,
     autoSizeSelected,
@@ -526,6 +528,15 @@ export function EditorCanvas() {
               {showGuides ? <Eye size={13} /> : <EyeOff size={13} />}
               Guider
             </button>
+            <button
+              className={showAnchors ? "active" : ""}
+              aria-pressed={showAnchors}
+              title="Visa eller dölj bild-, tile- och sorteringsankare"
+              onClick={toggleAnchors}
+            >
+              {showAnchors ? <Eye size={13} /> : <EyeOff size={13} />}
+              Ankare
+            </button>
           </div>
           <div className="canvas-zoom-control">
             <button
@@ -594,11 +605,13 @@ export function EditorCanvas() {
           </defs>
           <rect x="-640" y="-480" width="1920" height="1440" className="canvas-bg" pointerEvents="none" />
           <rect x="-640" y="-480" width="1920" height="1440" fill="url(#micro-grid)" pointerEvents="none" />
-          {showGuides && (
+          {(showGuides || showAnchors) && (
             <GuideLayer
               tile={tile}
               tileWidth={project.tileWidth}
               tileHeight={project.tileHeight}
+              showGuides={showGuides}
+              showAnchors={showAnchors}
             />
           )}
           <g filter="url(#object-shadow)">
@@ -754,7 +767,7 @@ export function EditorCanvas() {
                 : "Dra en punkt – fri omformning"}
             </text>
           )}
-          {showGuides && (
+          {showAnchors && (
             <g className="interactive-anchor-layer">
               <g
                 className="anchor-handle image-handle"

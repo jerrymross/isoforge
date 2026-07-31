@@ -208,42 +208,59 @@ type GuideLayerProps = {
   tileWidth: number;
   tileHeight: number;
   compact?: boolean;
+  showGuides?: boolean;
+  showAnchors?: boolean;
 };
 
-export function GuideLayer({ tile, tileWidth, tileHeight, compact }: GuideLayerProps) {
+export function GuideLayer({
+  tile,
+  tileWidth,
+  tileHeight,
+  compact,
+  showGuides = true,
+  showAnchors = true,
+}: GuideLayerProps) {
   const diamond = tileDiamond(tileWidth, tileHeight);
   return (
     <g className="guide-layer" pointerEvents="none">
-      <polygon points={pointsToString(diamond)} className="tile-guide" />
-      <line
-        x1={TILE_CENTER.x}
-        y1={compact ? 250 : 100}
-        x2={TILE_CENTER.x}
-        y2={compact ? 360 : 410}
-        className="center-guide"
-      />
-      <line
-        x1={TILE_CENTER.x - 150}
-        y1={tile.anchor.baseline}
-        x2={TILE_CENTER.x + 150}
-        y2={tile.anchor.baseline}
-        className="baseline-guide"
-      />
-      {!compact && (
+      {showGuides && (
         <>
-          <line x1={50} y1={439} x2={590} y2={169} className="iso-guide" />
-          <line x1={50} y1={169} x2={590} y2={439} className="iso-guide" />
-          <rect x="192" y="128" width="256" height="256" className="export-guide" />
+          <polygon points={pointsToString(diamond)} className="tile-guide" />
+          <line
+            x1={TILE_CENTER.x}
+            y1={compact ? 250 : 100}
+            x2={TILE_CENTER.x}
+            y2={compact ? 360 : 410}
+            className="center-guide"
+          />
+          {!compact && (
+            <>
+              <line x1={50} y1={439} x2={590} y2={169} className="iso-guide" />
+              <line x1={50} y1={169} x2={590} y2={439} className="iso-guide" />
+              <rect x="192" y="128" width="256" height="256" className="export-guide" />
+            </>
+          )}
         </>
       )}
-      <g transform={`translate(${tile.anchor.image.x} ${tile.anchor.image.y})`}>
-        <circle r="7" className="anchor-ring" />
-        <path d="M -11 0 H 11 M 0 -11 V 11" className="anchor-cross" />
-      </g>
-      <g transform={`translate(${tile.anchor.sort.x} ${tile.anchor.sort.y})`}>
-        <path d="M 0 -7 L 7 0 L 0 7 L -7 0 Z" className="sort-anchor" />
-        {!compact && <text x="11" y="3" className="sort-anchor-label">SORT</text>}
-      </g>
+      {showAnchors && (
+        <>
+          <line
+            x1={TILE_CENTER.x - 150}
+            y1={tile.anchor.baseline}
+            x2={TILE_CENTER.x + 150}
+            y2={tile.anchor.baseline}
+            className="baseline-guide"
+          />
+          <g transform={`translate(${tile.anchor.image.x} ${tile.anchor.image.y})`}>
+            <circle r="7" className="anchor-ring" />
+            <path d="M -11 0 H 11 M 0 -11 V 11" className="anchor-cross" />
+          </g>
+          <g transform={`translate(${tile.anchor.sort.x} ${tile.anchor.sort.y})`}>
+            <path d="M 0 -7 L 7 0 L 0 7 L -7 0 Z" className="sort-anchor" />
+            {!compact && <text x="11" y="3" className="sort-anchor-label">SORT</text>}
+          </g>
+        </>
+      )}
     </g>
   );
 }

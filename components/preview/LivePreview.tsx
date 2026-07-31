@@ -25,10 +25,12 @@ export function LivePreview() {
     zoom,
     previewMode,
     showGuides,
+    showAnchors,
     showCollisions,
     setZoom,
     setPreviewMode,
     toggleGuides,
+    toggleAnchors,
     setShowCollisions,
   } = useEditorStore();
   const [fillMode, setFillMode] = useState<FillMode>("repeat");
@@ -211,7 +213,7 @@ export function LivePreview() {
                       ))}
                   </g>
                 )}
-                {showGuides && !isCenter && (
+                {showAnchors && !isCenter && (
                   <circle
                     cx={cell.tile.anchor.image.x}
                     cy={cell.tile.anchor.image.y}
@@ -222,12 +224,14 @@ export function LivePreview() {
               </g>
             );
           })}
-          {showGuides && (
+          {(showGuides || showAnchors) && (
             <GuideLayer
               tile={tile}
               tileWidth={project.tileWidth}
               tileHeight={project.tileHeight}
               compact
+              showGuides={showGuides}
+              showAnchors={showAnchors}
             />
           )}
         </svg>
@@ -284,8 +288,12 @@ export function LivePreview() {
           </label>
         )}
         <label className="toggle-row">
-          <span>Guider och ankare</span>
+          <span>Guider</span>
           <input type="checkbox" checked={showGuides} onChange={toggleGuides} />
+        </label>
+        <label className="toggle-row">
+          <span>Ankarpunkter</span>
+          <input type="checkbox" checked={showAnchors} onChange={toggleAnchors} />
         </label>
         <label className="toggle-row">
           <span>Kollisionsytor</span>
