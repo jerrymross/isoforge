@@ -37,6 +37,22 @@ export function tileGuidePolygon(
   height: number,
   baseline = TILE_CENTER.y + height / 2,
 ): Point[] {
+  if (mode === "circle") {
+    const center = { x: TILE_CENTER.x, y: baseline - height / 2 };
+    return Array.from({ length: 48 }, (_, index) => {
+      const angle = (index / 48) * Math.PI * 2;
+      return {
+        x: center.x + Math.cos(angle) * width / 2,
+        y: center.y + Math.sin(angle) * height / 2,
+      };
+    });
+  }
+  if (mode === "roof" || mode === "corner") {
+    return tileDiamond(width, height, {
+      x: TILE_CENTER.x,
+      y: baseline - height / 2,
+    });
+  }
   if (mode === "wall-left" || mode === "wall-right") {
     const isLeft = mode === "wall-left";
     const leftX = isLeft ? TILE_CENTER.x - width / 2 : TILE_CENTER.x;
@@ -71,6 +87,39 @@ export function tileGuideFaces(
   baseline = TILE_CENTER.y + height / 2,
 ): Point[][] {
   const primary = tileGuidePolygon(mode, width, height, baseline);
+
+  if (mode === "corner") {
+    const wallHeight = height * 2;
+    const centerBottom = { x: TILE_CENTER.x, y: baseline };
+    const centerTop = { x: TILE_CENTER.x, y: baseline - wallHeight };
+    const leftBottom = { x: TILE_CENTER.x - width / 2, y: baseline - height / 2 };
+    const leftTop = { x: leftBottom.x, y: leftBottom.y - wallHeight };
+    const rightBottom = { x: TILE_CENTER.x + width / 2, y: baseline - height / 2 };
+    const rightTop = { x: rightBottom.x, y: rightBottom.y - wallHeight };
+    return [
+      [leftTop, centerTop, centerBottom, leftBottom],
+      [centerTop, rightTop, rightBottom, centerBottom],
+    ];
+  }
+
+  if (mode === "roof") {
+    const apex = { x: TILE_CENTER.x, y: baseline - height * 1.5 };
+    return [
+      primary,
+      [primary[0], primary[1], apex],
+      [primary[1], primary[2], apex],
+      [primary[2], primary[3], apex],
+      [primary[3], primary[0], apex],
+    ];
+  }
+
+  if (mode === "circle") {
+    return [
+      primary,
+      [primary[0], primary[24]],
+      [primary[12], primary[36]],
+    ];
+  }
 
   if (mode === "floor") {
     const top = primary;

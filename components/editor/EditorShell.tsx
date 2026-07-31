@@ -250,6 +250,9 @@ export function EditorShell() {
             <option value="wall-left">Vägg vänster</option>
             <option value="wall-right">Vägg höger</option>
             <option value="floor-object">Objekt på golv</option>
+            <option value="corner">Hörn</option>
+            <option value="roof">Tak</option>
+            <option value="circle">Cirkel</option>
           </select>
         </label>
         <span className="context-divider" />

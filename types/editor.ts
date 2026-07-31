@@ -20,7 +20,10 @@ export type TileGuideMode =
   | "floor"
   | "wall-left"
   | "wall-right"
-  | "floor-object";
+  | "floor-object"
+  | "corner"
+  | "roof"
+  | "circle";
 
 export type VectorKind = "line" | "polygon" | "iso-box" | "iso-cylinder";
 

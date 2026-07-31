@@ -117,6 +117,22 @@ describe("isometrisk geometri", () => {
     expect(wallRightFaces[1][0].y - wallRightFaces[0][0].y).toBe(-16);
   });
 
+  it("creates isometric corner, roof, and circle guides", () => {
+    const corner = tileGuideFaces("corner", 128, 64, 336);
+    const roof = tileGuideFaces("roof", 128, 64, 336);
+    const circle = tileGuideFaces("circle", 128, 64, 336);
+
+    expect(corner).toHaveLength(2);
+    expect(corner[0][1]).toEqual(corner[1][0]);
+    expect(corner[0][2]).toEqual(corner[1][3]);
+    expect(roof).toHaveLength(5);
+    expect(roof.slice(1).every((face) => face.length === 3)).toBe(true);
+    expect(circle[0]).toHaveLength(48);
+    expect(circle[1]).toHaveLength(2);
+    expect(circle[0][0]).toEqual({ x: 384, y: 304 });
+    expect(circle[0][12]).toEqual({ x: 320, y: 336 });
+  });
+
   it("låser linjer till en isometrisk vinkel", () => {
     const result = snapIsoLine({ x: 0, y: 0 }, { x: 100, y: 44 });
     expect(result.angle).toBe(26.565);

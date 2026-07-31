@@ -358,11 +358,19 @@ export function GuideLayer({
         <>
           <g className="tile-guide-volume">
             {guideFaces.map((face, index) => (
-              <polygon
-                key={`${tile.guideMode ?? "floor"}-${index}`}
-                points={pointsToString(face)}
-                className="tile-guide"
-              />
+              face.length > 2 ? (
+                <polygon
+                  key={`${tile.guideMode ?? "floor"}-${index}`}
+                  points={pointsToString(face)}
+                  className="tile-guide"
+                />
+              ) : (
+                <polyline
+                  key={`${tile.guideMode ?? "floor"}-${index}`}
+                  points={pointsToString(face)}
+                  className="tile-guide"
+                />
+              )
             ))}
           </g>
           <line
