@@ -29,6 +29,34 @@ function mapUvPoint(point: { x: number; y: number }, quad: { x: number; y: numbe
   };
 }
 
+function canonicalUvQuad(points: { x: number; y: number }[]) {
+  if (points.length !== 4) return points;
+  const center = {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
+  let rising = 0;
+  let falling = 0;
+  points.forEach((point, index) => {
+    const next = points[(index + 1) % points.length];
+    const dx = next.x - point.x;
+    const dy = next.y - point.y;
+    if (Math.abs(dx) < 0.001 || Math.abs(dy) < 0.001) return;
+    if (dx * dy > 0) rising += Math.abs(dx);
+    else falling += Math.abs(dx);
+  });
+  const ordered = [...points].sort((a, b) =>
+    Math.atan2(a.y - center.y, a.x - center.x) - Math.atan2(b.y - center.y, b.x - center.x),
+  );
+  const isTop = rising + falling > 0 && Math.abs(rising - falling) / (rising + falling) < 0.35;
+  const start = isTop
+    ? ordered.reduce((best, point, index) => point.y < ordered[best].y ? index : best, 0)
+    : ordered.reduce((best, point, index) =>
+        point.x < ordered[best].x || (point.x === ordered[best].x && point.y < ordered[best].y) ? index : best,
+      0);
+  return [...ordered.slice(start), ...ordered.slice(0, start)];
+}
+
 function uvVectorPath(points: { x: number; y: number }[], quad: { x: number; y: number }[]): string {
   if (quad.length !== 4) return "";
   return points.map((point, index) => {
@@ -203,8 +231,8 @@ export function VectorShape({
             fill={uvFaceColor(object, "top")}
             {...common}
           />
-          {object.points.length === 4 && <UvCellOverlay object={object} face="top" quad={object.points} />}
-          {object.points.length === 4 && <UvVectorOverlay object={object} face="top" quad={object.points} />}
+          {object.points.length === 4 && <UvCellOverlay object={object} face="top" quad={canonicalUvQuad(object.points)} />}
+          {object.points.length === 4 && <UvVectorOverlay object={object} face="top" quad={canonicalUvQuad(object.points)} />}
         </>
       )}
       {selected && (

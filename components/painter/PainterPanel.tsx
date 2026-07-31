@@ -74,7 +74,7 @@ function projectedFacePoints(object: VectorObject, face: FaceId): Point[] {
   const cosine = Math.cos(rotation);
   const sine = Math.sin(rotation);
 
-  return points.map((point) => {
+  const projected = points.map((point) => {
     const tilted = {
       x: point.x,
       y: pivotY + (point.y - pivotY) * scaleY,
@@ -86,6 +86,21 @@ function projectedFacePoints(object: VectorObject, face: FaceId): Point[] {
       y: centerY + dx * sine + dy * cosine,
     };
   });
+  if (object.kind === "iso-box" || projected.length !== 4) return projected;
+  const faceCenter = {
+    x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
+    y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,
+  };
+  const ordered = [...projected].sort((a, b) =>
+    Math.atan2(a.y - faceCenter.y, a.x - faceCenter.x)
+      - Math.atan2(b.y - faceCenter.y, b.x - faceCenter.x),
+  );
+  const start = face === "top"
+    ? ordered.reduce((best, point, index) => point.y < ordered[best].y ? index : best, 0)
+    : ordered.reduce((best, point, index) =>
+        point.x < ordered[best].x || (point.x === ordered[best].x && point.y < ordered[best].y) ? index : best,
+      0);
+  return [...ordered.slice(start), ...ordered.slice(0, start)];
 }
 
 function normalizedFacePoints(object: VectorObject, face: FaceId): Point[] {
@@ -201,6 +216,7 @@ export function PainterPanel() {
   >(null);
   const paintRef = useRef<{ objectId: string; paint: UvPaint } | null>(null);
   const paint = object ? makePaint(object) : null;
+  const paintFace: FaceId = object?.kind === "iso-box" ? face : "top";
 
   useEffect(() => {
     if (object && paint && paintRef.current?.objectId !== object.id) {
@@ -226,10 +242,10 @@ export function PainterPanel() {
   function paintCell(index: number, erase = false) {
     if (!object || !paint) return;
     const current = currentObjectPaint() ?? paint;
-    const next = { ...current, [face]: [...current[face]] } as UvPaint;
+    const next = { ...current, [paintFace]: [...current[paintFace]] } as UvPaint;
     const nextColor = erase ? object.style.fill : color;
-    next[face][index] = nextColor;
-    next.activeColor = { ...current.activeColor, [face]: nextColor };
+    next[paintFace][index] = nextColor;
+    next.activeColor = { ...current.activeColor, [paintFace]: nextColor };
     paintRef.current = { objectId: object.id, paint: next };
     updateObject(object.id, { uvPaint: next });
   }
@@ -292,7 +308,7 @@ export function PainterPanel() {
     const current = currentObjectPaint() ?? paint;
     const next: UvPaint = {
       ...current,
-      vectors: { ...current.vectors, [face]: vectors },
+      vectors: { ...current.vectors, [paintFace]: vectors },
     };
     paintRef.current = { objectId: object.id, paint: next };
     updateObject(object.id, { uvPaint: next });
@@ -308,7 +324,7 @@ export function PainterPanel() {
     const current = currentObjectPaint() ?? paint;
     const vector: UvVectorPath = {
       id: crypto.randomUUID(),
-      name: `Form ${(current.vectors?.[face]?.length ?? 0) + 1}`,
+      name: `Form ${(current.vectors?.[paintFace]?.length ?? 0) + 1}`,
       points: draftRef.current,
       color,
       width: strokeWidth,
@@ -322,9 +338,9 @@ export function PainterPanel() {
       ...current,
       vectors: {
         ...current.vectors,
-        [face]: [...(current.vectors?.[face] ?? []), vector],
+        [paintFace]: [...(current.vectors?.[paintFace] ?? []), vector],
       },
-      activeColor: { ...current.activeColor, [face]: color },
+      activeColor: { ...current.activeColor, [paintFace]: color },
     };
     paintRef.current = { objectId: object.id, paint: next };
     updateObject(object.id, { uvPaint: next });
@@ -349,12 +365,12 @@ export function PainterPanel() {
   }
 
   function toggleVectorVisibility(id: string) {
-    const vectors = [...(currentObjectPaint()?.vectors?.[face] ?? [])];
+    const vectors = [...(currentObjectPaint()?.vectors?.[paintFace] ?? [])];
     saveVectors(vectors.map((vector, index) => (vector.id ?? `legacy-${index}`) === id ? { ...vector, visible: vector.visible === false } : vector));
   }
 
   function moveVectorLayer(id: string, direction: -1 | 1) {
-    const vectors = [...(currentObjectPaint()?.vectors?.[face] ?? [])];
+    const vectors = [...(currentObjectPaint()?.vectors?.[paintFace] ?? [])];
     const index = vectors.findIndex((vector, itemIndex) => (vector.id ?? `legacy-${itemIndex}`) === id);
     const target = index + direction;
     if (index < 0 || target < 0 || target >= vectors.length) return;
@@ -363,7 +379,7 @@ export function PainterPanel() {
   }
 
   function deleteVectorLayer(id: string) {
-    const vectors = currentObjectPaint()?.vectors?.[face] ?? [];
+    const vectors = currentObjectPaint()?.vectors?.[paintFace] ?? [];
     saveVectors(vectors.filter((vector, index) => (vector.id ?? `legacy-${index}`) !== id));
     setSelectedVectorId(null);
   }
@@ -383,7 +399,7 @@ export function PainterPanel() {
 
   function applyStyleToSelected() {
     if (!selectedVectorId) return;
-    const vectors = currentObjectPaint()?.vectors?.[face] ?? [];
+    const vectors = currentObjectPaint()?.vectors?.[paintFace] ?? [];
     saveVectors(vectors.map((vector, index) => {
       const id = vector.id ?? `legacy-${index}`;
       if (id !== selectedVectorId) return vector;
@@ -415,7 +431,7 @@ export function PainterPanel() {
   function updateEditDrag(point: Point) {
     const drag = editDragRef.current;
     if (!drag) return;
-    const vectors = [...(currentObjectPaint()?.vectors?.[face] ?? [])];
+    const vectors = [...(currentObjectPaint()?.vectors?.[paintFace] ?? [])];
     const vectorIndex = vectors.findIndex((vector, index) => (vector.id ?? `legacy-${index}`) === drag.id);
     if (vectorIndex < 0) return;
     const vector = vectors[vectorIndex];
@@ -460,7 +476,7 @@ export function PainterPanel() {
 
   function handleScalePointerDown(event: React.PointerEvent<SVGRectElement>) {
     if (!selectedVectorId) return;
-    const vectors = currentObjectPaint()?.vectors?.[face] ?? [];
+    const vectors = currentObjectPaint()?.vectors?.[paintFace] ?? [];
     const vector = vectors.find((item, index) => (item.id ?? `legacy-${index}`) === selectedVectorId);
     if (!vector) return;
     const bounds = {
@@ -488,7 +504,7 @@ export function PainterPanel() {
     event.stopPropagation();
     selectVectorLayer(vector, id);
     if (vectorTool === "bucket") {
-      const vectors = currentObjectPaint()?.vectors?.[face] ?? [];
+      const vectors = currentObjectPaint()?.vectors?.[paintFace] ?? [];
       saveVectors(vectors.map((item, index) => (item.id ?? `legacy-${index}`) === id
         ? { ...item, closed: true, fill: fillColor, gradient: undefined }
         : item));
@@ -607,7 +623,7 @@ export function PainterPanel() {
   const fittedHeight = fittedWidth / activeFaceAspect;
   const zoomedWidth = fittedWidth * painterZoom;
   const zoomedHeight = fittedHeight * painterZoom;
-  const faceVectors = paint.vectors?.[face] ?? [];
+  const faceVectors = paint.vectors?.[paintFace] ?? [];
   const selectedVectorIndex = faceVectors.findIndex((vector, index) => (vector.id ?? `legacy-${index}`) === selectedVectorId);
   const selectedVector = selectedVectorIndex >= 0 ? faceVectors[selectedVectorIndex] : null;
   const selectedVectorBounds = selectedVector ? {
@@ -713,14 +729,14 @@ export function PainterPanel() {
           >
             <svg className={`painter-vector-layer ${["select", "move", "node", "bucket"].includes(vectorTool) ? "is-editing" : ""}`} viewBox="0 0 1 1" preserveAspectRatio="none">
               <defs>
-                {(paint.vectors?.[face] ?? []).map((path, index) => path.gradient && (
+                {(paint.vectors?.[paintFace] ?? []).map((path, index) => path.gradient && (
                   <linearGradient key={`gradient-${index}`} id={`painter-gradient-${object.id}-${face}-${path.id ?? `legacy-${index}`}`} x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform={`rotate(${path.gradient.angle} .5 .5)`}>
                     <stop offset="0" stopColor={path.gradient.from} />
                     <stop offset="1" stopColor={path.gradient.to} />
                   </linearGradient>
                 ))}
               </defs>
-              {paint[face].map((cell, index) => {
+              {paint[paintFace].map((cell, index) => {
                 const column = index % UV_SIZE;
                 const row = Math.floor(index / UV_SIZE);
                 const corners = [
@@ -737,7 +753,7 @@ export function PainterPanel() {
                   <path d={uvGuidePath(activeQuad, position, false)} />
                 </g>
               ))}
-              {(paint.vectors?.[face] ?? []).map((path, index) => {
+              {(paint.vectors?.[paintFace] ?? []).map((path, index) => {
                 if (path.visible === false) return null;
                 const id = path.id ?? `legacy-${index}`;
                 const data = `${painterPathData(path.points, object, face)}${path.closed ? " Z" : ""}`;
