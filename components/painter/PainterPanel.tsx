@@ -22,8 +22,38 @@ function modelFacePoints(object: VectorObject, face: FaceId): Point[] {
   return object.points;
 }
 
-function faceCanvasStyle(object: VectorObject, face: FaceId): CSSProperties {
+function projectedFacePoints(object: VectorObject, face: FaceId): Point[] {
   const points = modelFacePoints(object, face);
+  if (!object.points.length) return points;
+  const minX = Math.min(...object.points.map((point) => point.x));
+  const maxX = Math.max(...object.points.map((point) => point.x));
+  const minY = Math.min(...object.points.map((point) => point.y));
+  const maxY = Math.max(...object.points.map((point) => point.y));
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const pivotY = maxY;
+  const tilt = Math.max(0, Math.min(75, object.tilt ?? 0));
+  const scaleY = Math.cos((tilt * Math.PI) / 180);
+  const rotation = ((object.rotation ?? 0) * Math.PI) / 180;
+  const cosine = Math.cos(rotation);
+  const sine = Math.sin(rotation);
+
+  return points.map((point) => {
+    const tilted = {
+      x: point.x,
+      y: pivotY + (point.y - pivotY) * scaleY,
+    };
+    const dx = tilted.x - centerX;
+    const dy = tilted.y - centerY;
+    return {
+      x: centerX + dx * cosine - dy * sine,
+      y: centerY + dx * sine + dy * cosine,
+    };
+  });
+}
+
+function faceCanvasStyle(object: VectorObject, face: FaceId): CSSProperties {
+  const points = projectedFacePoints(object, face);
   const minX = Math.min(...points.map((point) => point.x));
   const maxX = Math.max(...points.map((point) => point.x));
   const minY = Math.min(...points.map((point) => point.y));
