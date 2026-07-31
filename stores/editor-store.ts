@@ -310,7 +310,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ...tile,
           objects: [
             ...tile.objects,
-            state.autoTilt
+            state.autoTilt && object.tilt === undefined
               ? { ...object, tilt: TILED_ISOMETRIC_TILT }
               : object,
           ],
@@ -321,10 +321,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => {
       if (!objects.length) return state;
       const preparedObjects = state.autoTilt
-        ? objects.map((object) => ({
-            ...object,
-            tilt: TILED_ISOMETRIC_TILT,
-          }))
+        ? objects.map((object) =>
+            object.tilt === undefined
+              ? { ...object, tilt: TILED_ISOMETRIC_TILT }
+              : object,
+          )
         : objects;
       return {
         ...snapshot(

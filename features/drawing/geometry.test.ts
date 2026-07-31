@@ -123,7 +123,11 @@ describe("isometrisk geometri", () => {
     ];
     expect(penPathData(curved, true)).toContain("C 10 -10 10 10 20 0");
     expect(penPathData(curved, true).endsWith("Z")).toBe(true);
-    expect(samplePenPath(curved, true, 4).length).toBeGreaterThan(3);
+    const sampled = samplePenPath(curved, true, 4);
+    expect(sampled.length).toBeGreaterThan(3);
+    expect(sampled).toContainEqual(curved[0].point);
+    expect(sampled).toContainEqual(curved[1].point);
+    expect(sampled).toContainEqual(curved[2].point);
   });
 
   it("places neighboring tile diamonds exactly edge to edge", () => {

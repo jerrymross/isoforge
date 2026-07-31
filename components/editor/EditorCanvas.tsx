@@ -162,6 +162,7 @@ export function EditorCanvas() {
       layerId: selectedLayerId,
       points: samplePenPath(penNodes, true, 14),
       height: 0,
+      tilt: 0,
       style: {
         fill: project.style.fillColor,
         stroke: project.style.strokeColor,
