@@ -1128,7 +1128,11 @@ button:disabled {
 .painter-layer-row i { width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,.14); }
 .painter-layer-row button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .uv-layout { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; aspect-ratio: 1; margin-top: 12px; }
-.uv-face { display: grid; place-items: center; color: rgba(255,255,255,.85); font-size: 16px; font-weight: 800; border: 1px solid rgba(30,55,50,.2); }
+.uv-face { position: relative; display: grid; place-items: center; padding: 5px; color: rgba(255,255,255,.9); font-size: 16px; font-weight: 800; border: 1px solid rgba(30,55,50,.2); background: rgba(230,166,88,.12); cursor: pointer; }
+.uv-face svg { width: 100%; height: 100%; overflow: visible; }
+.uv-face polygon { stroke: #765d40; stroke-width: .012; }
+.uv-face b { position: absolute; inset: 0; display: grid; place-items: center; text-shadow: 0 1px 2px rgba(0,0,0,.32); }
+.uv-face.active { border-color: #ee6a47; box-shadow: inset 0 0 0 1px #ee6a47; }
 .uv-top { grid-column: 1 / 3; }
 .empty-painter { display: grid; align-content: center; justify-items: start; gap: 12px; }
 .empty-painter p { max-width: 380px; color: var(--muted, #72807b); font-size: 13px; line-height: 1.5; }

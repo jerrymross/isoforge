@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDown, ArrowUp, Brush, ChevronLeft, Circle, Columns3, Eraser, Eye, EyeOff, Layers3, MousePointer2, Paintbrush, PenLine, RectangleHorizontal, Square, Trash2, Waypoints } from "lucide-react";
+import { ArrowDown, ArrowUp, Brush, ChevronLeft, Circle, Columns3, Eraser, Eye, EyeOff, Grid3X3, Layers3, MousePointer2, Paintbrush, PenLine, RectangleHorizontal, Trash2, Waypoints } from "lucide-react";
 import type { Point, UvPaint, UvVectorPath, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
 
@@ -130,7 +130,7 @@ export function PainterPanel() {
   const { project, selectedObjectId, selectedObjectIds, updateObject, setWorkspaceMode } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId);
   const selectedObjects = tile?.objects.filter((item) => selectedObjectIds.includes(item.id)) ?? [];
-  const [painterObjectId, setPainterObjectId] = useState<string | null>(() => selectedObjectId);
+  const [painterObjectId, setPainterObjectId] = useState<string | null>(() => selectedObjects.length >= 3 ? selectedObjects[0].id : selectedObjectId);
   const object = selectedObjects.find((item) => item.id === painterObjectId)
     ?? tile?.objects.find((item) => item.id === selectedObjectId);
   const [face, setFace] = useState<FaceId>("top");
@@ -466,6 +466,22 @@ export function PainterPanel() {
     setDraftPath([]);
   }
 
+  function chooseFace(nextFace: FaceId) {
+    setFace(nextFace);
+    if (selectedObjects.length >= 3) {
+      const index = faces.findIndex((item) => item.id === nextFace);
+      const matchingObject = selectedObjects[index];
+      if (matchingObject) setPainterObjectId(matchingObject.id);
+    }
+    setSelectedVectorId(null);
+  }
+
+  function choosePainterObject(id: string, index: number) {
+    setPainterObjectId(id);
+    if (selectedObjects.length >= 3 && index < faces.length) setFace(faces[index].id);
+    setSelectedVectorId(null);
+  }
+
   if (!object || !paint) {
     return (
       <section className="painter-panel empty-painter">
@@ -502,11 +518,11 @@ export function PainterPanel() {
         <button onClick={() => setWorkspaceMode("draw")} title="Tillbaka till ritläget"><ChevronLeft size={14} /> Ritläge</button>
       </div>
       <div className="painter-toolbar">
-        <label className="painter-color"><span>Färg</span><input type="color" value={color} onChange={(event) => setColor(event.target.value)} /><code>{color}</code></label>
+        {drawMode === "cells" && <label className="painter-color"><span>Färg</span><input type="color" value={color} onChange={(event) => setColor(event.target.value)} /><code>{color}</code></label>}
         <button className={`painter-tool ${drawMode === "vector" ? "active" : ""}`} title="Rita som vektor" onClick={() => changeDrawMode("vector")}><PenLine size={14} /> Vektor</button>
         <button className={`painter-tool ${drawMode === "cells" ? "active" : ""}`} title="Måla celler" onClick={() => changeDrawMode("cells")}><Brush size={14} /> Rutor</button>
         <button className="painter-tool" title="Använd objektets grundfärg" onClick={() => setColor(object.style.fill)}><Eraser size={14} /> Sudda</button>
-        <span className="painter-mode-note"><Square size={12} /> {drawMode === "vector" ? "Vektorritning" : "Rutmålning"}</span>
+        <span className="painter-mode-note">{drawMode === "vector" ? <PenLine size={12} /> : <Grid3X3 size={12} />} {drawMode === "vector" ? "Vektorritning" : "Rutmålning"}</span>
         <button className={`painter-tool ${facesBeside ? "active" : ""}`} onClick={() => setFacesBeside(!facesBeside)} title="Visa UV-ytorna bredvid varandra"><Columns3 size={14} /> Bredvid</button>
       </div>
       {drawMode === "vector" && (
@@ -530,17 +546,18 @@ export function PainterPanel() {
         <div className="painter-object-tabs" aria-label="Markerade objekt">
           <span>Markerade objekt</span>
           {selectedObjects.map((item, index) => (
-            <button key={item.id} className={object.id === item.id ? "active" : ""} onClick={() => setPainterObjectId(item.id)}>
-              {index + 1}. {item.name}
+            <button key={item.id} className={object.id === item.id ? "active" : ""} onClick={() => choosePainterObject(item.id, index)}>
+              {selectedObjects.length >= 3 && index < faces.length ? faces[index].label : `${index + 1}.`} {item.name}
             </button>
           ))}
         </div>
       )}
       <div className="painter-face-tabs">
-        {faces.map((item) => {
-          const previewPoints = normalizedFacePoints(object, item.id);
+        {faces.map((item, index) => {
+          const previewObject = selectedObjects.length >= 3 ? selectedObjects[index] ?? object : object;
+          const previewPoints = normalizedFacePoints(previewObject, item.id);
           return (
-            <button key={item.id} className={`${face === item.id ? "active" : ""} ${facesBeside ? "face-preview-button" : ""}`} onClick={() => setFace(item.id as FaceId)}>
+            <button key={item.id} className={`${face === item.id ? "active" : ""} ${facesBeside ? "face-preview-button" : ""}`} onClick={() => chooseFace(item.id)}>
               {facesBeside && <svg viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><polygon points={previewPoints.map((point) => `${point.x},${point.y}`).join(" ")} /></svg>}
               <span>{item.label}</span>
             </button>
@@ -555,7 +572,7 @@ export function PainterPanel() {
               return <button key={tool.id} className={vectorTool === tool.id && drawMode === "vector" ? "active" : ""} onClick={() => chooseVectorTool(tool.id)} title={tool.label}><Icon size={17} /><span>{tool.label}</span></button>;
             })}
             <span className="rail-divider" />
-            <label className="rail-proportion" title="Behåll proportioner vid skalning"><input type="checkbox" checked={keepVectorProportions} onChange={(event) => setKeepVectorProportions(event.target.checked)} /><Square size={14} /><span>Proportion</span></label>
+            <label className="rail-proportion" title="Behåll proportioner vid skalning"><input type="checkbox" checked={keepVectorProportions} onChange={(event) => setKeepVectorProportions(event.target.checked)} /><span>Proportion</span></label>
           </aside>
           <div className="painter-canvas-wrap">
           <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
@@ -635,10 +652,17 @@ export function PainterPanel() {
         </div>
         <div className="painter-preview-card">
           <span>UV-layout</span>
-          <div className="uv-layout" aria-hidden="true">
-            <div className="uv-face uv-top" style={{ background: `linear-gradient(135deg, ${paint.top[0]}, ${paint.top[Math.floor(paint.top.length / 2)]})` }}>T</div>
-            <div className="uv-face uv-left" style={{ background: `linear-gradient(90deg, ${paint.left[0]}, ${paint.left[Math.floor(paint.left.length / 2)]})` }}>V</div>
-            <div className="uv-face uv-right" style={{ background: `linear-gradient(90deg, ${paint.right[0]}, ${paint.right[Math.floor(paint.right.length / 2)]})` }}>H</div>
+          <div className="uv-layout">
+            {faces.map((item, index) => {
+              const faceObject = selectedObjects.length >= 3 ? selectedObjects[index] : object;
+              const points = normalizedFacePoints(faceObject ?? object, item.id);
+              return (
+                <button key={`layout-${item.id}`} className={`uv-face uv-${item.id} ${face === item.id ? "active" : ""}`} onClick={() => chooseFace(item.id)} title={`Redigera ${item.label.toLowerCase()}`}>
+                  <svg viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><polygon points={points.map((point) => `${point.x},${point.y}`).join(" ")} style={{ fill: faceObject?.style.fill ?? object.style.fill }} /></svg>
+                  <b>{item.label.slice(0, 1)}</b>
+                </button>
+              );
+            })}
           </div>
           <div className="painter-layers">
             <div className="painter-layers-heading"><span><Layers3 size={13} /> Lager</span><b>{faceVectors.length}</b></div>
