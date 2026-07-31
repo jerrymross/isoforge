@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Brush, ChevronLeft, Eraser, Paintbrush, PenLine, Square } from "lucide-react";
 import type { Point, UvPaint, UvVectorPath, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
@@ -12,6 +12,32 @@ const faces = [
   { id: "right", label: "HÖGER", description: "Höger sida" },
 ] as const;
 type FaceId = (typeof faces)[number]["id"];
+
+function modelFacePoints(object: VectorObject, face: FaceId): Point[] {
+  if (object.kind === "iso-box" && object.points.length >= 7) {
+    if (face === "top") return object.points.slice(0, 4);
+    if (face === "left") return [object.points[3], object.points[2], object.points[5], object.points[6]];
+    return [object.points[1], object.points[4], object.points[5], object.points[2]];
+  }
+  return object.points;
+}
+
+function faceCanvasStyle(object: VectorObject, face: FaceId): CSSProperties {
+  const points = modelFacePoints(object, face);
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  const width = Math.max(1, maxX - minX);
+  const height = Math.max(1, maxY - minY);
+  const clipPath = points
+    .map((point) => `${((point.x - minX) / width) * 100}% ${((point.y - minY) / height) * 100}%`)
+    .join(", ");
+  return {
+    "--painter-aspect": String(width / height),
+    clipPath: `polygon(${clipPath})`,
+  } as CSSProperties;
+}
 
 function makePaint(object: VectorObject): UvPaint {
   const existing = object.uvPaint;
@@ -165,6 +191,7 @@ export function PainterPanel() {
           <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
           <div
             className={`painter-grid face-${face}`}
+            style={faceCanvasStyle(object, face)}
             onPointerDown={pointerDown}
             onPointerMove={pointerMove}
             onPointerUp={finishVector}
