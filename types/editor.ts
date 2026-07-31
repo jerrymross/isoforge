@@ -38,6 +38,13 @@ export type UvPaint = {
   left: string[];
   right: string[];
   activeColor?: Partial<Record<"top" | "left" | "right", string>>;
+  vectors?: Partial<Record<"top" | "left" | "right", UvVectorPath[]>>;
+};
+
+export type UvVectorPath = {
+  points: Point[];
+  color: string;
+  width: number;
 };
 
 export type VectorObject = {

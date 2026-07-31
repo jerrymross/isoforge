@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Brush, ChevronLeft, Eraser, Paintbrush } from "lucide-react";
-import type { UvPaint, VectorObject } from "@/types/editor";
+import { Brush, ChevronLeft, Eraser, Paintbrush, PenLine, Square } from "lucide-react";
+import type { Point, UvPaint, UvVectorPath, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
 
 const UV_SIZE = 12;
@@ -31,7 +31,10 @@ export function PainterPanel() {
   const object = tile?.objects.find((item) => item.id === selectedObjectId);
   const [face, setFace] = useState<FaceId>("top");
   const [color, setColor] = useState("#ee6a47");
+  const [drawMode, setDrawMode] = useState<"vector" | "cells">("vector");
+  const [draftPath, setDraftPath] = useState<Point[]>([]);
   const painting = useRef(false);
+  const draftRef = useRef<Point[]>([]);
   const paintRef = useRef<{ objectId: string; paint: UvPaint } | null>(null);
   const paint = useMemo(() => (object ? makePaint(object) : null), [object]);
 
@@ -61,6 +64,65 @@ export function PainterPanel() {
     }
   }
 
+  function uvPoint(event: React.PointerEvent<HTMLDivElement>): Point {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height)),
+    };
+  }
+
+  function drawVector(event: React.PointerEvent<HTMLDivElement>) {
+    const point = uvPoint(event);
+    const previous = draftRef.current.at(-1);
+    if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) > 0.008) {
+      draftRef.current = [...draftRef.current, point];
+      setDraftPath(draftRef.current);
+    }
+  }
+
+  function finishVector() {
+    if (!object || !paint || drawMode !== "vector" || draftRef.current.length < 2) {
+      draftRef.current = [];
+      setDraftPath([]);
+      painting.current = false;
+      return;
+    }
+    const current = paintRef.current?.paint ?? paint;
+    const vector: UvVectorPath = { points: draftRef.current, color, width: 0.018 };
+    const next: UvPaint = {
+      ...current,
+      vectors: {
+        ...current.vectors,
+        [face]: [...(current.vectors?.[face] ?? []), vector],
+      },
+      activeColor: { ...current.activeColor, [face]: color },
+    };
+    paintRef.current = { objectId: object.id, paint: next };
+    updateObject(object.id, { uvPaint: next });
+    draftRef.current = [];
+    setDraftPath([]);
+    painting.current = false;
+  }
+
+  function pointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    painting.current = true;
+    if (drawMode === "vector") {
+      draftRef.current = [];
+      setDraftPath([]);
+      drawVector(event);
+    } else {
+      paintAtPointer(event);
+    }
+  }
+
+  function pointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!painting.current) return;
+    if (drawMode === "vector") drawVector(event);
+    else paintAtPointer(event);
+  }
+
   if (!object || !paint) {
     return (
       <section className="painter-panel empty-painter">
@@ -80,8 +142,10 @@ export function PainterPanel() {
       </div>
       <div className="painter-toolbar">
         <label className="painter-color"><span>Färg</span><input type="color" value={color} onChange={(event) => setColor(event.target.value)} /><code>{color}</code></label>
-        <button className="painter-tool active" title="Måla" onClick={() => undefined}><Brush size={14} /> Pensel</button>
-        <button className="painter-tool" title="Sudda med objektets grundfärg" onClick={() => setColor(object.style.fill)}><Eraser size={14} /> Sudda</button>
+        <button className={`painter-tool ${drawMode === "vector" ? "active" : ""}`} title="Rita som vektor" onClick={() => setDrawMode("vector")}><PenLine size={14} /> Vektor</button>
+        <button className={`painter-tool ${drawMode === "cells" ? "active" : ""}`} title="Måla celler" onClick={() => setDrawMode("cells")}><Brush size={14} /> Rutor</button>
+        <button className="painter-tool" title="Använd objektets grundfärg" onClick={() => setColor(object.style.fill)}><Eraser size={14} /> Sudda</button>
+        <span className="painter-mode-note"><Square size={12} /> {drawMode === "vector" ? "Vektorritning" : "Rutmålning"}</span>
       </div>
       <div className="painter-face-tabs">
         {faces.map((item) => <button key={item.id} className={face === item.id ? "active" : ""} onClick={() => setFace(item.id as FaceId)}>{item.label}</button>)}
@@ -91,11 +155,10 @@ export function PainterPanel() {
           <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
           <div
             className="painter-grid"
-            onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); painting.current = true; paintAtPointer(event); }}
-            onPointerMove={(event) => { if (painting.current) paintAtPointer(event); }}
-            onPointerUp={() => { painting.current = false; }}
-            onPointerCancel={() => { painting.current = false; }}
-            onPointerLeave={() => { painting.current = false; }}
+            onPointerDown={pointerDown}
+            onPointerMove={pointerMove}
+            onPointerUp={finishVector}
+            onPointerCancel={finishVector}
           >
             {paint[face].map((cell, index) => (
               <button
@@ -105,8 +168,14 @@ export function PainterPanel() {
                 aria-label={`${activeFace.label} cell ${index + 1}`}
               />
             ))}
+            <svg className="painter-vector-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+              {(paint.vectors?.[face] ?? []).map((path, index) => (
+                <path key={`saved-${index}`} d={path.points.map((point, pointIndex) => `${pointIndex ? "L" : "M"} ${point.x} ${point.y}`).join(" ")} fill="none" stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" />
+              ))}
+              {draftPath.length > 1 && <path d={draftPath.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth="0.018" strokeLinecap="round" strokeLinejoin="round" />}
+            </svg>
           </div>
-          <small className="painter-hint">Klicka eller dra över rutorna för att måla.</small>
+          <small className="painter-hint">{drawMode === "vector" ? "Dra i kvadraten för att rita en vektorlinje." : "Klicka eller dra över rutorna för att måla."}</small>
         </div>
         <div className="painter-preview-card">
           <span>UV-layout</span>

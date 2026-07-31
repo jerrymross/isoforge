@@ -47,6 +47,17 @@ function UvPattern({ object, face }: { object: VectorObject; face: "top" | "left
           fill={color}
         />
       ))}
+      {(object.uvPaint?.vectors?.[face] ?? []).map((vector, index) => (
+        <path
+          key={`vector-${face}-${index}`}
+          d={vector.points.map((point, pointIndex) => `${pointIndex ? "L" : "M"} ${point.x * size} ${point.y * size}`).join(" ")}
+          fill="none"
+          stroke={vector.color}
+          strokeWidth={vector.width * size}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
     </pattern>
   );
 }
