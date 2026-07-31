@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Brush, ChevronLeft, Eraser, Paintbrush, PenLine, Square } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Brush, ChevronLeft, Columns3, Eraser, Paintbrush, PenLine, Square } from "lucide-react";
 import type { Point, UvPaint, UvVectorPath, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
 
@@ -127,17 +127,21 @@ function makePaint(object: VectorObject): UvPaint {
 }
 
 export function PainterPanel() {
-  const { project, selectedObjectId, updateObject, setWorkspaceMode } = useEditorStore();
+  const { project, selectedObjectId, selectedObjectIds, updateObject, setWorkspaceMode } = useEditorStore();
   const tile = project.tiles.find((item) => item.id === project.activeTileId);
-  const object = tile?.objects.find((item) => item.id === selectedObjectId);
+  const selectedObjects = tile?.objects.filter((item) => selectedObjectIds.includes(item.id)) ?? [];
+  const [painterObjectId, setPainterObjectId] = useState<string | null>(() => selectedObjectId);
+  const object = selectedObjects.find((item) => item.id === painterObjectId)
+    ?? tile?.objects.find((item) => item.id === selectedObjectId);
   const [face, setFace] = useState<FaceId>("top");
+  const [facesBeside, setFacesBeside] = useState(false);
   const [color, setColor] = useState("#ee6a47");
   const [drawMode, setDrawMode] = useState<"vector" | "cells">(() => object?.uvPaint?.mode ?? "vector");
   const [draftPath, setDraftPath] = useState<Point[]>([]);
   const painting = useRef(false);
   const draftRef = useRef<Point[]>([]);
   const paintRef = useRef<{ objectId: string; paint: UvPaint } | null>(null);
-  const paint = useMemo(() => (object ? makePaint(object) : null), [object]);
+  const paint = object ? makePaint(object) : null;
 
   useEffect(() => {
     if (object && paint && paintRef.current?.objectId !== object.id) {
@@ -272,9 +276,28 @@ export function PainterPanel() {
         <button className={`painter-tool ${drawMode === "cells" ? "active" : ""}`} title="Måla celler" onClick={() => changeDrawMode("cells")}><Brush size={14} /> Rutor</button>
         <button className="painter-tool" title="Använd objektets grundfärg" onClick={() => setColor(object.style.fill)}><Eraser size={14} /> Sudda</button>
         <span className="painter-mode-note"><Square size={12} /> {drawMode === "vector" ? "Vektorritning" : "Rutmålning"}</span>
+        <button className={`painter-tool ${facesBeside ? "active" : ""}`} onClick={() => setFacesBeside(!facesBeside)} title="Visa UV-ytorna bredvid varandra"><Columns3 size={14} /> Bredvid</button>
       </div>
+      {selectedObjects.length > 1 && (
+        <div className="painter-object-tabs" aria-label="Markerade objekt">
+          <span>Markerade objekt</span>
+          {selectedObjects.map((item, index) => (
+            <button key={item.id} className={object.id === item.id ? "active" : ""} onClick={() => setPainterObjectId(item.id)}>
+              {index + 1}. {item.name}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="painter-face-tabs">
-        {faces.map((item) => <button key={item.id} className={face === item.id ? "active" : ""} onClick={() => setFace(item.id as FaceId)}>{item.label}</button>)}
+        {faces.map((item) => {
+          const previewPoints = normalizedFacePoints(object, item.id);
+          return (
+            <button key={item.id} className={`${face === item.id ? "active" : ""} ${facesBeside ? "face-preview-button" : ""}`} onClick={() => setFace(item.id as FaceId)}>
+              {facesBeside && <svg viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><polygon points={previewPoints.map((point) => `${point.x},${point.y}`).join(" ")} /></svg>}
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
       <div className="painter-workspace">
         <div className="painter-canvas-wrap">
