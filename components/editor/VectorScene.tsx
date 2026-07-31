@@ -48,19 +48,37 @@ function UvPattern({ object, face }: { object: VectorObject; face: "top" | "left
           fill={color}
         />
       ))}
-      {(object.uvPaint?.vectors?.[face] ?? []).map((vector, index) => (
-        <path
-          key={`vector-${face}-${index}`}
-          d={vector.points.map((point, pointIndex) => `${pointIndex ? "L" : "M"} ${point.x * size} ${point.y * size}`).join(" ")}
-          fill="none"
-          stroke={vector.color}
-          strokeWidth={vector.width * size}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
     </pattern>
   );
+}
+
+function uvVectorPath(points: { x: number; y: number }[], quad: { x: number; y: number }[]): string {
+  if (quad.length !== 4) return "";
+  const [a, b, c, d] = quad;
+  return points.map((point, index) => {
+    const u = point.x;
+    const v = point.y;
+    const mapped = {
+      x: a.x * (1 - u) * (1 - v) + b.x * u * (1 - v) + c.x * u * v + d.x * (1 - u) * v,
+      y: a.y * (1 - u) * (1 - v) + b.y * u * (1 - v) + c.y * u * v + d.y * (1 - u) * v,
+    };
+    return `${index ? "L" : "M"} ${mapped.x} ${mapped.y}`;
+  }).join(" ");
+}
+
+function UvVectorOverlay({ object, face, quad }: { object: VectorObject; face: "top" | "left" | "right"; quad: { x: number; y: number }[] }) {
+  return (object.uvPaint?.vectors?.[face] ?? []).map((vector, index) => (
+    <path
+      key={`uv-vector-${face}-${index}`}
+      d={uvVectorPath(vector.points, quad)}
+      fill="none"
+      stroke={vector.color}
+      strokeWidth={Math.max(1, vector.width * 64)}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
+    />
+  ));
 }
 
 type VectorShapeProps = {
@@ -159,6 +177,7 @@ export function VectorShape({
             fill={object.uvPaint ? `url(#${paintPatternId(object, "left")})` : shade(object.style.fill, -18)}
             {...common}
           />
+          <UvVectorOverlay object={object} face="left" quad={[object.points[3], object.points[2], object.points[5], object.points[6]]} />
           <polygon
             points={pointsToString([
               object.points[1],
@@ -169,18 +188,23 @@ export function VectorShape({
             fill={object.uvPaint ? `url(#${paintPatternId(object, "right")})` : shade(object.style.fill, -32)}
             {...common}
           />
+          <UvVectorOverlay object={object} face="right" quad={[object.points[1], object.points[4], object.points[5], object.points[2]]} />
           <polygon
             points={pointsToString(object.points.slice(0, 4))}
             fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : shade(object.style.fill, 12)}
             {...common}
           />
+          <UvVectorOverlay object={object} face="top" quad={object.points.slice(0, 4)} />
         </>
       ) : (
-        <polygon
-          points={pointsToString(object.points)}
-          fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : uvFaceColor(object, "top")}
-          {...common}
-        />
+        <>
+          <polygon
+            points={pointsToString(object.points)}
+            fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : uvFaceColor(object, "top")}
+            {...common}
+          />
+          {object.points.length === 4 && <UvVectorOverlay object={object} face="top" quad={object.points} />}
+        </>
       )}
       {selected && (
         <>

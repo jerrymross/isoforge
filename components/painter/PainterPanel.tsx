@@ -52,6 +52,39 @@ function projectedFacePoints(object: VectorObject, face: FaceId): Point[] {
   });
 }
 
+function normalizedFacePoints(object: VectorObject, face: FaceId): Point[] {
+  const points = projectedFacePoints(object, face);
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  const width = Math.max(1, maxX - minX);
+  const height = Math.max(1, maxY - minY);
+  return points.map((point) => ({
+    x: (point.x - minX) / width,
+    y: (point.y - minY) / height,
+  }));
+}
+
+function mapUvToFace(point: Point, quad: Point[]): Point {
+  if (quad.length !== 4) return point;
+  const [a, b, c, d] = quad;
+  const u = point.x;
+  const v = point.y;
+  return {
+    x: a.x * (1 - u) * (1 - v) + b.x * u * (1 - v) + c.x * u * v + d.x * (1 - u) * v,
+    y: a.y * (1 - u) * (1 - v) + b.y * u * (1 - v) + c.y * u * v + d.y * (1 - u) * v,
+  };
+}
+
+function painterPathData(points: Point[], object: VectorObject, face: FaceId): string {
+  const quad = normalizedFacePoints(object, face);
+  return points.map((point, index) => {
+    const mapped = mapUvToFace(point, quad);
+    return `${index ? "L" : "M"} ${mapped.x} ${mapped.y}`;
+  }).join(" ");
+}
+
 function faceCanvasStyle(object: VectorObject, face: FaceId): CSSProperties {
   const points = projectedFacePoints(object, face);
   const minX = Math.min(...points.map((point) => point.x));
@@ -60,8 +93,8 @@ function faceCanvasStyle(object: VectorObject, face: FaceId): CSSProperties {
   const maxY = Math.max(...points.map((point) => point.y));
   const width = Math.max(1, maxX - minX);
   const height = Math.max(1, maxY - minY);
-  const clipPath = points
-    .map((point) => `${((point.x - minX) / width) * 100}% ${((point.y - minY) / height) * 100}%`)
+  const clipPath = normalizedFacePoints(object, face)
+    .map((point) => `${point.x * 100}% ${point.y * 100}%`)
     .join(", ");
   return {
     "--painter-aspect": String(width / height),
@@ -123,9 +156,24 @@ export function PainterPanel() {
 
   function uvPoint(event: React.PointerEvent<HTMLDivElement>): Point {
     const bounds = event.currentTarget.getBoundingClientRect();
+    const screen = {
+      x: (event.clientX - bounds.left) / bounds.width,
+      y: (event.clientY - bounds.top) / bounds.height,
+    };
+    const quad = normalizedFacePoints(object!, face);
+    if (quad.length !== 4) return { x: Math.max(0, Math.min(1, screen.x)), y: Math.max(0, Math.min(1, screen.y)) };
+    const [origin, horizontal, , vertical] = quad;
+    const ax = horizontal.x - origin.x;
+    const ay = horizontal.y - origin.y;
+    const bx = vertical.x - origin.x;
+    const by = vertical.y - origin.y;
+    const dx = screen.x - origin.x;
+    const dy = screen.y - origin.y;
+    const determinant = ax * by - ay * bx;
+    if (Math.abs(determinant) < 0.000001) return screen;
     return {
-      x: Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)),
-      y: Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height)),
+      x: Math.max(0, Math.min(1, (dx * by - dy * bx) / determinant)),
+      y: Math.max(0, Math.min(1, (ax * dy - ay * dx) / determinant)),
     };
   }
 
@@ -237,9 +285,9 @@ export function PainterPanel() {
             ))}
             <svg className="painter-vector-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
               {(paint.vectors?.[face] ?? []).map((path, index) => (
-                <path key={`saved-${index}`} d={path.points.map((point, pointIndex) => `${pointIndex ? "L" : "M"} ${point.x} ${point.y}`).join(" ")} fill="none" stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" />
+                <path key={`saved-${index}`} d={painterPathData(path.points, object, face)} fill="none" stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" />
               ))}
-              {draftPath.length > 1 && <path d={draftPath.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth="0.018" strokeLinecap="round" strokeLinejoin="round" />}
+              {draftPath.length > 1 && <path d={painterPathData(draftPath, object, face)} fill="none" stroke={color} strokeWidth="0.018" strokeLinecap="round" strokeLinejoin="round" />}
             </svg>
           </div>
           <small className="painter-hint">{drawMode === "vector" ? "Dra i kvadraten för att rita en vektorlinje." : "Klicka eller dra över rutorna för att måla."}</small>
