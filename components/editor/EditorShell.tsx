@@ -30,7 +30,7 @@ import {
   prepareProjectForLaunch,
   useEditorStore,
 } from "@/stores/editor-store";
-import type { Tool } from "@/types/editor";
+import type { TileGuideMode, Tool } from "@/types/editor";
 
 const toolKeys: Record<string, Tool> = {
   v: "select",
@@ -56,6 +56,7 @@ export function EditorShell() {
     future,
     setProjectName,
     setTileSize,
+    setTileGuideMode,
     setTool,
     setWorkspaceMode,
     setAutoTilt,
@@ -66,6 +67,9 @@ export function EditorShell() {
     saveNow,
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
+  const activeTile = project.tiles.find(
+    (tile) => tile.id === project.activeTileId,
+  );
   const [theme, setTheme] = useState<Theme>(() =>
     typeof document !== "undefined" &&
     document.documentElement.dataset.theme === "dark"
@@ -199,6 +203,20 @@ export function EditorShell() {
             <option value="64x32">64 × 32</option>
             <option value="128x64">128 × 64</option>
             <option value="256x128">256 × 128</option>
+          </select>
+        </label>
+        <span className="context-divider" />
+        <label>
+          Guide
+          <select
+            value={activeTile?.guideMode ?? "floor"}
+            onChange={(event) =>
+              setTileGuideMode(event.target.value as TileGuideMode)
+            }
+          >
+            <option value="floor">Golv</option>
+            <option value="wall">Vägg</option>
+            <option value="floor-object">Objekt på golv</option>
           </select>
         </label>
         <span className="context-divider" />

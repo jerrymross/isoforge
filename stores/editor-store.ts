@@ -9,6 +9,7 @@ import type {
   Point,
   Project,
   Tile,
+  TileGuideMode,
   Tool,
   VectorObject,
   WorkspaceMode,
@@ -63,6 +64,7 @@ export function createEmptyTile(): Tile {
     collisions: [],
     objects: [],
     anchor: defaultAnchor(),
+    guideMode: "floor",
   };
 }
 
@@ -123,6 +125,7 @@ export function normalizeProject(project: Project): Project {
         ...tile,
         collectionId: tile.collectionId ?? legacy.collections![0].id,
         collisions: tile.collisions ?? [],
+        guideMode: tile.guideMode ?? "floor",
       })),
     };
   }
@@ -135,6 +138,7 @@ export function normalizeProject(project: Project): Project {
         ...tile,
         collectionId: "collection-bakery",
         collisions: tile.collisions ?? [],
+        guideMode: tile.guideMode ?? "floor",
       })),
       ...fallback.tiles.filter((tile) => !existingIds.has(tile.id)),
     ],
@@ -212,6 +216,7 @@ type EditorState = {
   setBaseline: (baseline: number) => void;
   setProjectName: (name: string) => void;
   setTileSize: (width: number, height: number) => void;
+  setTileGuideMode: (mode: TileGuideMode) => void;
   selectTile: (id: string) => void;
   createTile: (name: string, collectionId: string) => void;
   duplicateTile: (id: string) => void;
@@ -767,6 +772,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) =>
       snapshot(state, { ...state.project, tileWidth, tileHeight, updatedAt: now() }),
     ),
+  setTileGuideMode: (guideMode) =>
+    set((state) =>
+      snapshot(
+        state,
+        updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          guideMode,
+        })),
+      ),
+    ),
   selectTile: (id) =>
     set((state) => {
       const tile = state.project.tiles.find((item) => item.id === id);
@@ -790,6 +805,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         objects: [],
         collisions: [],
         anchor: defaultAnchor(),
+        guideMode: "floor",
       };
       return {
         ...snapshot(state, {
@@ -903,6 +919,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           points: collision.points.map((point) => ({ ...point })),
         })),
         anchor: tile.anchor ?? defaultAnchor(),
+        guideMode: tile.guideMode ?? "floor",
       }));
       if (!imported.length) return state;
       return {

@@ -5,7 +5,7 @@ import { collisionBounds } from "@/features/collision/collision";
 import {
   objectTransform,
   pointsToString,
-  tileDiamond,
+  tileGuidePolygon,
   TILE_CENTER,
 } from "@/features/drawing/geometry";
 import { shade } from "@/features/tiled-export/exporters";
@@ -220,24 +220,33 @@ export function GuideLayer({
   showGuides = true,
   showAnchors = true,
 }: GuideLayerProps) {
-  const diamond = tileDiamond(tileWidth, tileHeight);
+  const guidePolygon = tileGuidePolygon(
+    tile.guideMode ?? "floor",
+    tileWidth,
+    tileHeight,
+    tile.anchor.baseline,
+  );
+  const guideCenterY =
+    guidePolygon.reduce((sum, point) => sum + point.y, 0) /
+    guidePolygon.length;
+  const guideOffsetY = guideCenterY - TILE_CENTER.y;
   return (
     <g className="guide-layer" pointerEvents="none">
       {showGuides && (
         <>
-          <polygon points={pointsToString(diamond)} className="tile-guide" />
+          <polygon points={pointsToString(guidePolygon)} className="tile-guide" />
           <line
             x1={TILE_CENTER.x}
-            y1={compact ? 250 : 100}
+            y1={(compact ? 250 : 100) + guideOffsetY}
             x2={TILE_CENTER.x}
-            y2={compact ? 360 : 410}
+            y2={(compact ? 360 : 410) + guideOffsetY}
             className="center-guide"
           />
           {!compact && (
             <>
-              <line x1={50} y1={439} x2={590} y2={169} className="iso-guide" />
-              <line x1={50} y1={169} x2={590} y2={439} className="iso-guide" />
-              <rect x="192" y="128" width="256" height="256" className="export-guide" />
+              <line x1={50} y1={439 + guideOffsetY} x2={590} y2={169 + guideOffsetY} className="iso-guide" />
+              <line x1={50} y1={169 + guideOffsetY} x2={590} y2={439 + guideOffsetY} className="iso-guide" />
+              <rect x="192" y={128 + guideOffsetY} width="256" height="256" className="export-guide" />
             </>
           )}
         </>

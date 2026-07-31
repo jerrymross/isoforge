@@ -1,4 +1,10 @@
-import type { PenNode, Point, Project, VectorObject } from "@/types/editor";
+import type {
+  PenNode,
+  Point,
+  Project,
+  TileGuideMode,
+  VectorObject,
+} from "@/types/editor";
 import { isValidCollision } from "@/features/collision/collision";
 
 export const CANVAS_VIEWBOX = { width: 640, height: 480 };
@@ -23,6 +29,30 @@ export function tileDiamond(width: number, height: number, center = TILE_CENTER)
     { x: center.x, y: center.y + height / 2 },
     { x: center.x - width / 2, y: center.y },
   ];
+}
+
+export function tileGuidePolygon(
+  mode: TileGuideMode,
+  width: number,
+  height: number,
+  baseline = TILE_CENTER.y + height / 2,
+): Point[] {
+  if (mode === "wall") {
+    const leftX = TILE_CENTER.x - width / 2;
+    const rightX = TILE_CENTER.x + width / 2;
+    const wallHeight = height * 2;
+    return [
+      { x: leftX, y: baseline - height - wallHeight },
+      { x: rightX, y: baseline - wallHeight },
+      { x: rightX, y: baseline },
+      { x: leftX, y: baseline - height },
+    ];
+  }
+  const upwardOffset = mode === "floor-object" ? height : 0;
+  return tileDiamond(width, height, {
+    x: TILE_CENTER.x,
+    y: baseline - height / 2 - upwardOffset,
+  });
 }
 
 export function pointsToString(points: Point[]): string {

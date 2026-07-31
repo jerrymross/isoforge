@@ -16,6 +16,7 @@ export type Tool =
   | "iso-box";
 
 export type WorkspaceMode = "draw" | "convert" | "objects" | "collision";
+export type TileGuideMode = "floor" | "wall" | "floor-object";
 
 export type VectorKind = "line" | "polygon" | "iso-box" | "iso-cylinder";
 
@@ -82,6 +83,7 @@ export type Tile = {
   collisions: CollisionShape[];
   layers: Layer[];
   anchor: Anchor;
+  guideMode?: TileGuideMode;
 };
 
 export type TileCollection = {

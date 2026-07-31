@@ -21,6 +21,7 @@ import {
   snapPointToTargets,
   scaleObjectFromPivot,
   tileDiamond,
+  tileGuidePolygon,
   TILED_ISOMETRIC_TILT,
 } from "./geometry";
 import type { Project } from "@/types/editor";
@@ -73,6 +74,16 @@ describe("isometrisk geometri", () => {
     const points = tileDiamond(128, 64);
     expect(points[0]).toEqual({ x: 320, y: 272 });
     expect(points[1]).toEqual({ x: 384, y: 304 });
+  });
+
+  it("keeps guide modes on isometric angles", () => {
+    const floor = tileGuidePolygon("floor", 128, 64, 336);
+    const raised = tileGuidePolygon("floor-object", 128, 64, 336);
+    const wall = tileGuidePolygon("wall", 128, 64, 336);
+    expect(floor[2].y).toBe(336);
+    expect(raised[2].y).toBe(272);
+    expect(wall[1].y - wall[0].y).toBe(64);
+    expect(wall[2].y - wall[3].y).toBe(64);
   });
 
   it("låser linjer till en isometrisk vinkel", () => {
