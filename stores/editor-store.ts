@@ -246,6 +246,7 @@ type EditorState = {
     source: VectorObject,
     pivot: Point,
     scale: number,
+    scaleY?: number,
   ) => void;
   beginContinuousEdit: () => void;
   moveAnchorPoint: (kind: "image" | "tile" | "sort", point: Point) => void;
@@ -514,13 +515,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         autosaveState: "saving",
       };
     }),
-  scaleObject: (id, source, pivot, scale) =>
+  scaleObject: (id, source, pivot, scale, scaleY) =>
     set((state) => ({
       project: updateActiveTile(state.project, (tile) => ({
         ...tile,
         objects: tile.objects.map((object) =>
           object.id === id
-            ? scaleObjectFromPivot(source, pivot, scale)
+            ? scaleObjectFromPivot(source, pivot, scale, scaleY)
             : object,
         ),
       })),

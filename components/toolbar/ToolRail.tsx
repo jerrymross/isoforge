@@ -67,12 +67,12 @@ export function ToolRail() {
           </button>
         );
       })}
-      {tool === "node" && (
+      {(tool === "node" || tool === "scale") && (
         <button
           className={proportionalNodes ? "node-option active" : "node-option"}
           aria-pressed={proportionalNodes}
           onClick={() => setProportionalNodes(!proportionalNodes)}
-          title="Växla mellan proportionell och fri punktredigering"
+          title={tool === "scale" ? "Växla mellan fri bredd/höjd och proportionell skalning" : "Växla mellan proportionell och fri punktredigering"}
         >
           {proportionalNodes ? <Link2 size={14} /> : <Link2Off size={14} />}
           <span>Behåll proportioner</span>

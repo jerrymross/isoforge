@@ -119,7 +119,7 @@ export function EditorCanvas() {
     id: string;
     source: VectorObject;
     pivot: Point;
-    startDistance: number;
+    startHandle: Point;
   } | null>(null);
   const nodeDragRef = useRef<{
     id: string;
@@ -365,15 +365,22 @@ export function EditorCanvas() {
       return;
     }
     if (scaleDragRef.current) {
-      const distance = Math.hypot(
-        snappedPoint.x - scaleDragRef.current.pivot.x,
-        snappedPoint.y - scaleDragRef.current.pivot.y,
-      );
+      const startHandle = scaleDragRef.current.startHandle;
+      const startX = startHandle.x - scaleDragRef.current.pivot.x;
+      const startY = startHandle.y - scaleDragRef.current.pivot.y;
+      let scaleX = (snappedPoint.x - scaleDragRef.current.pivot.x) / (Math.abs(startX) < 0.001 ? 0.001 : startX);
+      let scaleY = (snappedPoint.y - scaleDragRef.current.pivot.y) / (Math.abs(startY) < 0.001 ? 0.001 : startY);
+      if (proportionalNodes) {
+        const uniform = Math.abs(scaleX) > Math.abs(scaleY) ? scaleX : scaleY;
+        scaleX = uniform;
+        scaleY = uniform;
+      }
       scaleObject(
         scaleDragRef.current.id,
         scaleDragRef.current.source,
         scaleDragRef.current.pivot,
-        distance / scaleDragRef.current.startDistance,
+        scaleX,
+        scaleY,
       );
       return;
     }
@@ -545,7 +552,7 @@ export function EditorCanvas() {
       id: object.id,
       source: object,
       pivot,
-      startDistance: Math.max(1, Math.hypot(handle.x - pivot.x, handle.y - pivot.y)),
+      startHandle: { ...handle },
     };
     svg.setPointerCapture(event.pointerId);
   }
@@ -890,7 +897,7 @@ export function EditorCanvas() {
                 y={selectedBounds.minY - 11}
                 pointerEvents="none"
               >
-                Dra ett hörn för proportionell skalning
+                {proportionalNodes ? "Dra ett hörn för proportionell skalning" : "Dra ett hörn för fri bredd/höjd"}
               </text>
             </g>
           )}

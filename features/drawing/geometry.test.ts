@@ -296,6 +296,11 @@ describe("isometrisk geometri", () => {
     expect(scaled.points[2]).toEqual({ x: 220, y: 220 });
   });
 
+  it("scales width and height independently when requested", () => {
+    const scaled = scaleObjectFromPivot(square, { x: 20, y: 20 }, 2, 1.5);
+    expect(scaled.points[2]).toEqual({ x: 220, y: 170 });
+  });
+
   it("snaps free rotation to the nearest isometric direction", () => {
     expect(snapObjectAngle(24)).toBe(26.565);
     expect(snapObjectAngle(101)).toBe(90);

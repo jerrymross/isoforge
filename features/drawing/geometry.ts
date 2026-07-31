@@ -595,14 +595,16 @@ export function scaleObjectFromPivot(
   object: VectorObject,
   pivot: Point,
   scale: number,
+  scaleY = scale,
 ): VectorObject {
-  const safeScale = Math.max(0.05, Math.min(20, scale));
+  const safeScale = Math.max(0.05, Math.min(20, Math.abs(scale))) * Math.sign(scale || 1);
+  const safeScaleY = Math.max(0.05, Math.min(20, Math.abs(scaleY))) * Math.sign(scaleY || 1);
   return {
     ...object,
-    height: object.height * safeScale,
+    height: object.height * Math.abs(safeScaleY),
     points: object.points.map((point) => ({
       x: pivot.x + (point.x - pivot.x) * safeScale,
-      y: pivot.y + (point.y - pivot.y) * safeScale,
+      y: pivot.y + (point.y - pivot.y) * safeScaleY,
     })),
   };
 }
