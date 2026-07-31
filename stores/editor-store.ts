@@ -86,7 +86,7 @@ export function createDefaultProject(): Project {
     style: {
       strokeWidth: 2,
       strokeColor: "#24313a",
-      fillColor: "#e9a85d",
+      fillColor: "#8a9093",
       lightDirection: "top-left",
     },
     collections: [{ id: "collection-my-tiles", name: "Mina tiles" }],

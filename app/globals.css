@@ -342,6 +342,18 @@ button:disabled {
   min-height: 0;
 }
 
+.workspace-painter {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.workspace-painter .workspace-side-placeholder {
+  display: none;
+}
+
+.workspace-painter .center-stack {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .tool-rail {
   z-index: 2;
   overflow-y: auto;
@@ -1049,26 +1061,28 @@ button:disabled {
 }
 
 .painter-panel {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   height: 100%;
-  padding: 18px;
-  overflow: auto;
+  padding: 10px 12px 8px;
+  overflow: hidden;
   background: var(--panel, #fbfcfa);
 }
 .painter-heading { justify-content: space-between; }
-.painter-open-button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #e5b4a5; border-radius: 5px; padding: 4px 7px; background: #fff7f3; color: #bd5038; font-size: 10px; cursor: pointer; }
+.painter-open-button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #aeb4b6; border-radius: 5px; padding: 4px 7px; background: #f1f2f2; color: #4f575b; font-size: 10px; cursor: pointer; }
 .painter-heading > span { display: inline-flex; align-items: center; gap: 7px; }
 .painter-heading small { color: var(--muted, #72807b); font-weight: 500; }
 .painter-heading button, .empty-painter button, .painter-tool {
   display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line, #d9dfda);
   border-radius: 6px; padding: 6px 9px; background: var(--surface, #fff); color: inherit; cursor: pointer;
 }
-.painter-toolbar { display: flex; align-items: center; gap: 8px; margin: 18px 0 12px; }
+.painter-toolbar { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; margin: 10px 0 8px; }
 .painter-stylebar { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: -4px 0 12px; padding: 9px; border: 1px solid var(--line, #d9dfda); border-radius: 7px; background: rgba(111,135,128,.035); font-size: 10px; }
 .painter-stylebar label { display: inline-flex; align-items: center; gap: 5px; color: var(--muted, #72807b); }
 .painter-stylebar button, .painter-tool-group button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line, #d9dfda); border-radius: 5px; padding: 5px 7px; background: var(--surface, #fff); color: inherit; font-size: 10px; cursor: pointer; }
 .painter-tool-group { display: inline-flex; gap: 3px; }
-.painter-tool-group button.active, .painter-stylebar .commit-shape { border-color: #ee6a47; background: #fff5f1; color: #c94f35; }
+.painter-tool-group button.active, .painter-stylebar .commit-shape { border-color: #6d767a; background: #eceeef; color: #3f474b; }
 .painter-stylebar input[type="color"], .painter-stylebar .mini-color { width: 25px; height: 23px; padding: 1px; border: 1px solid var(--line, #d9dfda); border-radius: 4px; background: transparent; }
 .painter-stylebar .compact-range input { width: 78px; }
 .painter-stylebar .compact-range b { min-width: 20px; color: inherit; font-size: 9px; }
@@ -1077,33 +1091,42 @@ button:disabled {
 .painter-color { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted, #72807b); }
 .painter-color input { width: 28px; height: 25px; padding: 1px; border: 1px solid var(--line, #d9dfda); border-radius: 5px; background: transparent; }
 .painter-color code { color: inherit; font-size: 11px; }
-.painter-tool.active { border-color: #ee6a47; color: #c94f35; background: #fff5f1; }
+.painter-tool.active { border-color: #6d767a; color: #3f474b; background: #eceeef; }
 .painter-mode-note { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; color: var(--muted, #72807b); font-size: 11px; }
 .painter-face-tabs { display: flex; gap: 5px; border-bottom: 1px solid var(--line, #d9dfda); }
 .painter-face-tabs button { border: 0; border-bottom: 2px solid transparent; padding: 8px 11px; background: transparent; color: var(--muted, #72807b); font-size: 10px; font-weight: 800; letter-spacing: .07em; cursor: pointer; }
-.painter-face-tabs button.active { border-bottom-color: #ee6a47; color: #c94f35; }
+.painter-face-tabs button.active { border-bottom-color: #596267; color: #3f474b; }
 .painter-object-tabs { display: flex; align-items: center; gap: 5px; margin: 0 0 12px; padding: 8px; border: 1px solid var(--line, #d9dfda); border-radius: 7px; overflow-x: auto; }
 .painter-object-tabs > span { flex: 0 0 auto; margin-right: 4px; color: var(--muted, #72807b); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .painter-object-tabs button { flex: 0 0 auto; border: 1px solid var(--line, #d9dfda); border-radius: 5px; padding: 5px 8px; background: transparent; color: var(--muted, #72807b); font-size: 11px; cursor: pointer; }
-.painter-object-tabs button.active { border-color: #e68a71; background: #fff5f1; color: #bd5038; }
+.painter-object-tabs button.active { border-color: #7b8488; background: #eceeef; color: #3f474b; }
 .painter-face-tabs .face-preview-button { display: grid; grid-template-rows: 72px auto; width: min(30%, 180px); min-width: 120px; gap: 5px; border: 1px solid var(--line, #d9dfda); border-radius: 7px 7px 0 0; padding: 8px; }
 .painter-face-tabs .face-preview-button svg { width: 100%; height: 72px; overflow: visible; }
-.painter-face-tabs .face-preview-button polygon { fill: rgba(229, 163, 83, .38); stroke: #8a6a44; stroke-width: .012; }
-.painter-face-tabs .face-preview-button.active { border-color: #ee6a47; border-bottom-color: #ee6a47; background: #fff8f4; }
-.painter-workspace { display: grid; grid-template-columns: minmax(280px, 1fr) 220px; gap: 24px; align-items: start; padding-top: 22px; }
-.painter-design-area { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 14px; align-items: start; }
-.painter-tool-rail { display: grid; gap: 5px; padding: 6px; border: 1px solid var(--line, #d9dfda); border-radius: 8px; background: var(--surface, #fff); }
+.painter-face-tabs .face-preview-button polygon { fill: rgba(138, 144, 147, .38); stroke: #626a6e; stroke-width: .012; }
+.painter-face-tabs .face-preview-button.active { border-color: #6d767a; border-bottom-color: #6d767a; background: #f0f1f1; }
+.painter-workspace { display: grid; flex: 1 1 auto; grid-template-columns: minmax(280px, 1fr) 190px; gap: 12px; min-height: 0; align-items: stretch; padding-top: 10px; overflow: hidden; }
+.painter-design-area { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 9px; min-width: 0; min-height: 0; align-items: stretch; }
+.painter-tool-rail { display: grid; align-content: start; gap: 4px; min-height: 0; overflow-y: auto; padding: 5px; border: 1px solid var(--line, #d9dfda); border-radius: 8px; background: var(--surface, #fff); }
 .painter-tool-rail button { display: grid; place-items: center; gap: 2px; min-height: 45px; padding: 5px 2px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted, #72807b); cursor: pointer; }
 .painter-tool-rail button span, .painter-tool-rail label span { font-size: 8px; }
 .painter-tool-rail button:hover { background: rgba(106,137,130,.08); }
-.painter-tool-rail button.active { border-color: #e68a71; background: #fff3ee; color: #c94f35; }
+.painter-tool-rail button.active { border-color: #7b8488; background: #e9ebec; color: #3f474b; }
 .painter-tool-rail .rail-divider { height: 1px; background: var(--line, #d9dfda); }
 .rail-proportion { display: grid; place-items: center; gap: 3px; padding: 5px 0; color: var(--muted, #72807b); cursor: pointer; }
 .rail-proportion input { width: 13px; height: 13px; }
-.rail-proportion.active { color: #c94f35; }
-.painter-canvas-label { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted, #72807b); font-size: 11px; }
+.rail-proportion.active { color: #495256; }
+.painter-canvas-wrap { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; }
+.painter-canvas-label { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; min-height: 31px; margin-bottom: 5px; color: var(--muted, #72807b); font-size: 11px; }
 .painter-canvas-label strong { color: inherit; }
-.painter-grid { position: relative; display: block; width: min(100%, 560px); aspect-ratio: var(--painter-aspect, 1); border: 1px solid var(--line, #d9dfda); background: transparent; touch-action: none; }
+.painter-canvas-label > span { overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.painter-zoom { display: inline-flex; overflow: hidden; border: 1px solid var(--line, #d9dfda); border-radius: 6px; background: var(--surface, #fff); }
+.painter-zoom button { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 27px; border: 0; border-right: 1px solid var(--line, #d9dfda); padding: 0; background: transparent; color: #596267; cursor: pointer; }
+.painter-zoom button:last-child { border-right: 0; }
+.painter-zoom button:hover { background: #eceeef; }
+.painter-zoom .painter-fit { min-width: 68px; gap: 5px; padding: 0 7px; font-size: 9px; font-weight: 700; }
+.painter-stage { min-width: 0; min-height: 0; overflow: auto; border: 1px solid #e0e3e3; border-radius: 6px; background: #f2f3f3; }
+.painter-zoom-content { position: relative; min-width: 100%; min-height: 100%; }
+.painter-grid { position: absolute; top: 50%; left: 50%; display: block; width: min(100%, 560px); aspect-ratio: var(--painter-aspect, 1); border: 1px solid var(--line, #d9dfda); background: transparent; transform: translate(-50%, -50%); touch-action: none; }
 .painter-grid.face-top { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .painter-grid.face-left { clip-path: polygon(0 0, 50% 25%, 50% 100%, 0 75%); }
 .painter-grid.face-right { clip-path: polygon(50% 25%, 100% 0, 100% 75%, 50% 100%); }
@@ -1114,29 +1137,29 @@ button:disabled {
 .painter-vector-layer.is-editing { pointer-events: auto; }
 .painter-vector-layer.is-editing .painter-uv-cell, .painter-vector-layer.is-editing .painter-uv-guides { pointer-events: none; }
 .painter-drawn-shape { cursor: pointer; }
-.painter-edit-node { fill: #fffaf0; stroke: #ed6847; stroke-width: .004; cursor: move; pointer-events: all; }
+.painter-edit-node { fill: #f7f8f8; stroke: #4f575b; stroke-width: .004; cursor: move; pointer-events: all; }
 .painter-selection-box polygon { fill: none; stroke: #167fca; stroke-width: .004; stroke-dasharray: .012 .008; pointer-events: none; }
 .painter-selection-box rect { fill: #fff; stroke: #167fca; stroke-width: .004; cursor: nwse-resize; pointer-events: all; }
 .painter-uv-guides path { fill: none; stroke: rgba(255,255,255,.76); stroke-width: .0022; }
 .painter-cell { min-width: 0; min-height: 0; padding: 0; border: 0; cursor: crosshair; box-shadow: inset 0 0 0 1px rgba(20, 45, 40, .08); }
 .painter-cell:hover { filter: brightness(1.14); }
-.painter-hint { display: block; margin-top: 9px; color: var(--muted, #72807b); font-size: 11px; }
-.painter-preview-card { border: 1px solid var(--line, #d9dfda); border-radius: 8px; padding: 12px; color: var(--muted, #72807b); font-size: 11px; }
+.painter-hint { display: block; min-height: 22px; margin-top: 6px; color: var(--muted, #72807b); font-size: 10px; }
+.painter-preview-card { min-height: 0; overflow-y: auto; border: 1px solid var(--line, #d9dfda); border-radius: 8px; padding: 9px; color: var(--muted, #72807b); font-size: 11px; }
 .painter-layers { display: grid; gap: 4px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line, #d9dfda); }
 .painter-layers-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
 .painter-layers-heading span { display: inline-flex; align-items: center; gap: 5px; color: inherit; font-weight: 700; }
 .painter-layers-heading b { font-size: 9px; }
 .painter-layer-row { display: grid; grid-template-columns: 22px minmax(0,1fr) 15px 22px 22px 22px; align-items: center; gap: 3px; padding: 3px; border: 1px solid transparent; border-radius: 5px; cursor: pointer; }
-.painter-layer-row.active { border-color: #e68a71; background: #fff5f1; }
+.painter-layer-row.active { border-color: #7b8488; background: #eceeef; }
 .painter-layer-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; }
 .painter-layer-row i { width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,.14); }
 .painter-layer-row button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .uv-layout { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; aspect-ratio: 1; margin-top: 12px; }
-.uv-face { position: relative; display: grid; place-items: center; padding: 5px; color: rgba(255,255,255,.9); font-size: 16px; font-weight: 800; border: 1px solid rgba(30,55,50,.2); background: rgba(230,166,88,.12); cursor: pointer; }
+.uv-face { position: relative; display: grid; place-items: center; padding: 5px; color: rgba(255,255,255,.92); font-size: 16px; font-weight: 800; border: 1px solid rgba(30,55,50,.2); background: rgba(138,144,147,.14); cursor: pointer; }
 .uv-face svg { width: 100%; height: 100%; overflow: visible; }
-.uv-face polygon { stroke: #765d40; stroke-width: .012; }
+.uv-face polygon { stroke: #596267; stroke-width: .012; }
 .uv-face b { position: absolute; inset: 0; display: grid; place-items: center; text-shadow: 0 1px 2px rgba(0,0,0,.32); }
-.uv-face.active { border-color: #ee6a47; box-shadow: inset 0 0 0 1px #ee6a47; }
+.uv-face.active { border-color: #596267; box-shadow: inset 0 0 0 1px #596267; }
 .uv-top { grid-column: 1 / 3; }
 .empty-painter { display: grid; align-content: center; justify-items: start; gap: 12px; }
 .empty-painter p { max-width: 380px; color: var(--muted, #72807b); font-size: 13px; line-height: 1.5; }
@@ -1179,13 +1202,17 @@ html[data-theme="dark"] .world-size-fields input, html[data-theme="dark"] .world
 html[data-theme="dark"] .world-grid-base polygon { fill: rgba(40,58,53,.48); stroke: #526f68; }
 html[data-theme="dark"] .painter-panel { background: #18221f; }
 html[data-theme="dark"] .painter-heading button, html[data-theme="dark"] .empty-painter button, html[data-theme="dark"] .painter-tool, html[data-theme="dark"] .painter-preview-card { border-color: #384743; background: #1d2825; }
-html[data-theme="dark"] .painter-tool.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }
+html[data-theme="dark"] .painter-tool.active { border-color: #7f898d; background: #31383a; color: #e0e3e4; }
 html[data-theme="dark"] .painter-tool-rail { border-color: #384743; background: #1d2825; }
-html[data-theme="dark"] .painter-tool-rail button.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }
+html[data-theme="dark"] .painter-tool-rail button.active { border-color: #7f898d; background: #31383a; color: #e0e3e4; }
 html[data-theme="dark"] .painter-stylebar, html[data-theme="dark"] .painter-stylebar button, html[data-theme="dark"] .painter-stylebar .toggle-chip { border-color: #384743; background: #1d2825; }
-html[data-theme="dark"] .painter-layer-row.active { border-color: #b65b43; background: #35241f; }
+html[data-theme="dark"] .painter-layer-row.active { border-color: #7f898d; background: #31383a; }
 html[data-theme="dark"] .painter-object-tabs, html[data-theme="dark"] .painter-object-tabs button, html[data-theme="dark"] .painter-face-tabs .face-preview-button { border-color: #384743; }
-html[data-theme="dark"] .painter-object-tabs button.active, html[data-theme="dark"] .painter-face-tabs .face-preview-button.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }
+html[data-theme="dark"] .painter-object-tabs button.active, html[data-theme="dark"] .painter-face-tabs .face-preview-button.active { border-color: #7f898d; background: #31383a; color: #e0e3e4; }
+html[data-theme="dark"] .painter-stage { border-color: #384743; background: #141b1d; }
+html[data-theme="dark"] .painter-zoom { border-color: #384743; background: #1d2825; }
+html[data-theme="dark"] .painter-zoom button { border-color: #384743; color: #c3cfcb; }
+html[data-theme="dark"] .painter-zoom button:hover { background: #31383a; }
 
 .vector-object:hover {
   filter: brightness(1.035);
@@ -3114,6 +3141,7 @@ html[data-theme="dark"] .export-options > button:hover {
 
 @media (max-width: 1180px) {
   .workspace { grid-template-columns: 132px minmax(510px, 1fr) 300px; }
+  .workspace.workspace-painter { grid-template-columns: minmax(0, 1fr) 300px; }
   .tool-button { grid-template-columns: 21px minmax(0, 1fr); }
   .tool-button kbd,
   .canvas-status span:nth-child(2) { display: none; }

@@ -265,7 +265,7 @@ export function EditorShell() {
         </span>
       </div>
 
-      <div className="workspace">
+      <div className={`workspace workspace-${workspaceMode}`}>
         {workspaceMode === "draw" ? (
           <ToolRail />
         ) : workspaceMode === "collision" ? (

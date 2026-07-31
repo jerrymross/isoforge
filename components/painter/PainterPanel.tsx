@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDown, ArrowUp, Brush, ChevronLeft, Circle, Columns3, Eraser, Eye, EyeOff, Grid3X3, Layers3, Magnet, MousePointer2, Move, PaintBucket, Paintbrush, PenLine, RectangleHorizontal, Trash2, Waypoints } from "lucide-react";
+import { ArrowDown, ArrowUp, Brush, ChevronLeft, Circle, Columns3, Eraser, Eye, EyeOff, Grid3X3, Layers3, Magnet, Maximize2, Minus, MousePointer2, Move, PaintBucket, Paintbrush, PenLine, Plus, RectangleHorizontal, Trash2, Waypoints } from "lucide-react";
 import type { Point, UvPaint, UvVectorPath, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
 
@@ -135,9 +135,9 @@ export function PainterPanel() {
     ?? tile?.objects.find((item) => item.id === selectedObjectId);
   const [face, setFace] = useState<FaceId>("top");
   const [facesBeside, setFacesBeside] = useState(false);
-  const [color, setColor] = useState("#ee6a47");
-  const [fillColor, setFillColor] = useState("#e9a95a");
-  const [gradientTo, setGradientTo] = useState("#f36a48");
+  const [color, setColor] = useState("#4f575b");
+  const [fillColor, setFillColor] = useState("#8a9093");
+  const [gradientTo, setGradientTo] = useState("#c1c5c7");
   const [gradientAngle, setGradientAngle] = useState(45);
   const [strokeWidth, setStrokeWidth] = useState(0.018);
   const [fillEnabled, setFillEnabled] = useState(true);
@@ -147,6 +147,8 @@ export function PainterPanel() {
   const [vectorTool, setVectorTool] = useState<"select" | "move" | "node" | "bucket" | "freehand" | "pen" | "rectangle" | "ellipse">("select");
   const [keepVectorProportions, setKeepVectorProportions] = useState(false);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [painterZoom, setPainterZoom] = useState(1);
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const [selectedVectorId, setSelectedVectorId] = useState<string | null>(null);
   const [drawMode, setDrawMode] = useState<"vector" | "cells">(() => object?.uvPaint?.mode ?? "vector");
   const [draftPath, setDraftPath] = useState<Point[]>([]);
@@ -154,6 +156,7 @@ export function PainterPanel() {
   const draftRef = useRef<Point[]>([]);
   const shapeStartRef = useRef<Point | null>(null);
   const painterSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const painterStageRef = useRef<HTMLDivElement | null>(null);
   const editDragRef = useRef<
     | { kind: "node"; id: string; index: number }
     | { kind: "move"; id: string; start: Point; points: Point[] }
@@ -168,6 +171,16 @@ export function PainterPanel() {
       paintRef.current = { objectId: object.id, paint };
     }
   }, [object, paint]);
+
+  useEffect(() => {
+    const stage = painterStageRef.current;
+    if (!stage) return;
+    const updateSize = () => setStageSize({ width: stage.clientWidth, height: stage.clientHeight });
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [object?.id]);
 
   function paintCell(index: number, erase = false) {
     if (!object || !paint) return;
@@ -516,6 +529,7 @@ export function PainterPanel() {
 
   function chooseFace(nextFace: FaceId) {
     setFace(nextFace);
+    setPainterZoom(1);
     if (selectedObjects.length >= 3) {
       const index = faces.findIndex((item) => item.id === nextFace);
       const matchingObject = selectedObjects[index];
@@ -526,6 +540,7 @@ export function PainterPanel() {
 
   function choosePainterObject(id: string, index: number) {
     setPainterObjectId(id);
+    setPainterZoom(1);
     if (selectedObjects.length >= 3 && index < faces.length) setFace(faces[index].id);
     setSelectedVectorId(null);
   }
@@ -542,6 +557,15 @@ export function PainterPanel() {
 
   const activeFace = faces.find((item) => item.id === face)!;
   const activeQuad = normalizedFacePoints(object, face);
+  const activeFaceStyle = faceCanvasStyle(object, face);
+  const activeFaceAspect = Number(activeFaceStyle["--painter-aspect" as keyof CSSProperties]) || 1;
+  const stageInset = 32;
+  const availableStageWidth = Math.max(1, stageSize.width - stageInset);
+  const availableStageHeight = Math.max(1, stageSize.height - stageInset);
+  const fittedWidth = Math.min(availableStageWidth, availableStageHeight * activeFaceAspect);
+  const fittedHeight = fittedWidth / activeFaceAspect;
+  const zoomedWidth = fittedWidth * painterZoom;
+  const zoomedHeight = fittedHeight * painterZoom;
   const faceVectors = paint.vectors?.[face] ?? [];
   const selectedVectorIndex = faceVectors.findIndex((vector, index) => (vector.id ?? `legacy-${index}`) === selectedVectorId);
   const selectedVector = selectedVectorIndex >= 0 ? faceVectors[selectedVectorIndex] : null;
@@ -626,11 +650,21 @@ export function PainterPanel() {
             <label className={`rail-proportion ${snapEnabled ? "active" : ""}`} title="Snappa till UV-guidernas skärningar"><input type="checkbox" checked={snapEnabled} onChange={(event) => setSnapEnabled(event.target.checked)} /><Magnet size={14} /><span>Snap</span></label>
           </aside>
           <div className="painter-canvas-wrap">
-          <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
+          <div className="painter-canvas-label">
+            <strong>{activeFace.label}</strong>
+            <span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span>
+            <div className="painter-zoom" aria-label="Zooma Painter">
+              <button onClick={() => setPainterZoom((value) => Math.max(.5, value - .25))} title="Zooma ut"><Minus size={13} /></button>
+              <button className="painter-fit" onClick={() => setPainterZoom(1)} title="Visa hela objektet"><Maximize2 size={12} /> {Math.round(painterZoom * 100)}%</button>
+              <button onClick={() => setPainterZoom((value) => Math.min(4, value + .25))} title="Zooma in"><Plus size={13} /></button>
+            </div>
+          </div>
+          <div ref={painterStageRef} className="painter-stage">
+          <div className="painter-zoom-content" style={{ width: Math.max(stageSize.width, zoomedWidth + stageInset), height: Math.max(stageSize.height, zoomedHeight + stageInset) }}>
           <div
             ref={painterSurfaceRef}
             className={`painter-grid face-${face} tool-${vectorTool}`}
-            style={faceCanvasStyle(object, face)}
+            style={{ ...activeFaceStyle, width: zoomedWidth || undefined, height: zoomedHeight || undefined }}
             onPointerDown={pointerDown}
             onPointerMove={pointerMove}
             onPointerUp={finishPointerVector}
@@ -698,6 +732,8 @@ export function PainterPanel() {
                 </g>;
               })()}
             </svg>
+          </div>
+          </div>
           </div>
           <small className="painter-hint">{drawMode === "cells" ? "Klicka eller dra över rutorna för att måla." : vectorTool === "select" ? "Klicka på en form och dra i hörnhandtagen för att skala." : vectorTool === "move" ? "Dra en form till en ny plats." : vectorTool === "bucket" ? "Klicka på en form för att fylla den med aktuell fyllningsfärg." : vectorTool === "node" ? "Markera en form och dra dess noder för att ändra formen." : vectorTool === "pen" ? "Klicka punkt för punkt. Klicka på startpunkten för att sluta formen." : vectorTool === "rectangle" || vectorTool === "ellipse" ? "Dra ut formen över UV-ytan." : "Dra över ytan för att rita på fri hand."} {snapEnabled ? "Snap är aktiv." : ""}</small>
           </div>
