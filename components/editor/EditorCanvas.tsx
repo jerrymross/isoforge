@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  CornerUpLeft,
   Crosshair,
   Eye,
   EyeOff,
@@ -11,6 +12,7 @@ import {
   Minus,
   MoveDown,
   Plus,
+  X,
 } from "lucide-react";
 import {
   makeIsoBox,
@@ -183,6 +185,39 @@ export function EditorCanvas() {
     setPenPointer(null);
     penDragRef.current = null;
   }
+
+  function undoPenPoint() {
+    setPenNodes((current) => current.slice(0, -1));
+    penDragRef.current = null;
+  }
+
+  function cancelPen() {
+    setPenNodes([]);
+    setPenPointer(null);
+    penDragRef.current = null;
+  }
+
+  useEffect(() => {
+    function handlePenKey(event: KeyboardEvent) {
+      if (tool !== "pen" || penNodes.length === 0) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select")) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setPenNodes([]);
+        setPenPointer(null);
+        penDragRef.current = null;
+      } else if (event.key === "Backspace") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setPenNodes((current) => current.slice(0, -1));
+        penDragRef.current = null;
+      }
+    }
+    window.addEventListener("keydown", handlePenKey, true);
+    return () => window.removeEventListener("keydown", handlePenKey, true);
+  }, [penNodes.length, tool]);
 
   const visibleObjects = sortObjectsByLayer(
     tile.objects.filter((object) => {
@@ -517,7 +552,25 @@ export function EditorCanvas() {
           <span className="eyebrow">VEKTORRITYTA</span>
           <strong>{tile.name}</strong>
         </div>
-        <div className="canvas-header-actions">
+          <div className="canvas-header-actions">
+          {tool === "pen" && (
+            <div className="smart-layout-actions pen-actions">
+              <button
+                disabled={!penNodes.length}
+                title="Ta bort den senast satta punkten (Backsteg)"
+                onClick={undoPenPoint}
+              >
+                <CornerUpLeft size={13} /> Ångra punkt
+              </button>
+              <button
+                disabled={!penNodes.length}
+                title="Avbryt hela den pågående formen (Esc)"
+                onClick={cancelPen}
+              >
+                <X size={13} /> Avbryt
+              </button>
+            </div>
+          )}
           <div className="smart-layout-actions">
             <button
               title={selectedObjectId ? "Centrera markeringen på baslinjen" : "Centrera hela tilen på baslinjen"}
@@ -761,7 +814,7 @@ export function EditorCanvas() {
                 >
                   {penNodes.length >= 3
                     ? "Klicka första punkten för att stänga och fylla"
-                    : "Klicka för linje · dra för kurva"}
+                    : "Klicka för linje · dra för kurva · Esc avbryter"}
                 </text>
               </g>
             )}
