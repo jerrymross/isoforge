@@ -37,7 +37,8 @@ function UvPattern({ object, face }: { object: VectorObject; face: "top" | "left
       height="1"
       viewBox={`0 0 ${size} ${size}`}
     >
-      {cells.map((color, index) => (
+      <rect x="0" y="0" width={size} height={size} fill={object.style.fill} />
+      {object.uvPaint?.mode === "cells" && cells.map((color, index) => (
         <rect
           key={`${face}-${index}`}
           x={index % size}

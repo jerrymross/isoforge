@@ -22,6 +22,7 @@ function makePaint(object: VectorObject): UvPaint {
     left: Array(UV_SIZE * UV_SIZE).fill(object.style.fill),
     right: Array(UV_SIZE * UV_SIZE).fill(object.style.fill),
     activeColor: {},
+    mode: "vector",
   };
 }
 
@@ -31,7 +32,7 @@ export function PainterPanel() {
   const object = tile?.objects.find((item) => item.id === selectedObjectId);
   const [face, setFace] = useState<FaceId>("top");
   const [color, setColor] = useState("#ee6a47");
-  const [drawMode, setDrawMode] = useState<"vector" | "cells">("vector");
+  const [drawMode, setDrawMode] = useState<"vector" | "cells">(() => object?.uvPaint?.mode ?? "vector");
   const [draftPath, setDraftPath] = useState<Point[]>([]);
   const painting = useRef(false);
   const draftRef = useRef<Point[]>([]);
@@ -123,6 +124,15 @@ export function PainterPanel() {
     else paintAtPointer(event);
   }
 
+  function changeDrawMode(nextMode: "vector" | "cells") {
+    if (!object || !paint) return;
+    setDrawMode(nextMode);
+    const current = paintRef.current?.paint ?? paint;
+    const next: UvPaint = { ...current, mode: nextMode };
+    paintRef.current = { objectId: object.id, paint: next };
+    updateObject(object.id, { uvPaint: next });
+  }
+
   if (!object || !paint) {
     return (
       <section className="painter-panel empty-painter">
@@ -142,8 +152,8 @@ export function PainterPanel() {
       </div>
       <div className="painter-toolbar">
         <label className="painter-color"><span>Färg</span><input type="color" value={color} onChange={(event) => setColor(event.target.value)} /><code>{color}</code></label>
-        <button className={`painter-tool ${drawMode === "vector" ? "active" : ""}`} title="Rita som vektor" onClick={() => setDrawMode("vector")}><PenLine size={14} /> Vektor</button>
-        <button className={`painter-tool ${drawMode === "cells" ? "active" : ""}`} title="Måla celler" onClick={() => setDrawMode("cells")}><Brush size={14} /> Rutor</button>
+        <button className={`painter-tool ${drawMode === "vector" ? "active" : ""}`} title="Rita som vektor" onClick={() => changeDrawMode("vector")}><PenLine size={14} /> Vektor</button>
+        <button className={`painter-tool ${drawMode === "cells" ? "active" : ""}`} title="Måla celler" onClick={() => changeDrawMode("cells")}><Brush size={14} /> Rutor</button>
         <button className="painter-tool" title="Använd objektets grundfärg" onClick={() => setColor(object.style.fill)}><Eraser size={14} /> Sudda</button>
         <span className="painter-mode-note"><Square size={12} /> {drawMode === "vector" ? "Vektorritning" : "Rutmålning"}</span>
       </div>
@@ -164,7 +174,7 @@ export function PainterPanel() {
               <button
                 key={`${face}-${index}`}
                 className="painter-cell"
-                style={{ backgroundColor: cell }}
+                style={{ backgroundColor: drawMode === "cells" ? cell : object.style.fill }}
                 aria-label={`${activeFace.label} cell ${index + 1}`}
               />
             ))}

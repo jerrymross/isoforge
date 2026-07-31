@@ -39,6 +39,7 @@ export type UvPaint = {
   right: string[];
   activeColor?: Partial<Record<"top" | "left" | "right", string>>;
   vectors?: Partial<Record<"top" | "left" | "right", UvVectorPath[]>>;
+  mode?: "vector" | "cells";
 };
 
 export type UvVectorPath = {
