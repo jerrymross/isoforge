@@ -5,6 +5,7 @@ import {
   Link2,
   Magnet,
   MoveDown,
+  Paintbrush,
   RotateCw,
   ScanLine,
   SlidersHorizontal,
@@ -26,6 +27,7 @@ export function Inspector() {
     setAutoAngle,
     setAutoTilt,
     setObjectTilt,
+    setWorkspaceMode,
     setAnchorPoint,
     setBaseline,
   } = useEditorStore();
@@ -46,6 +48,9 @@ export function Inspector() {
     <section className="inspector-card">
       <div className="inspector-heading">
         <span><SlidersHorizontal size={15} /> Egenskaper</span>
+        <button className="painter-open-button" onClick={() => setWorkspaceMode("painter")} title="Öppna markerat objekt i Painter">
+          <Paintbrush size={12} /> Painter
+        </button>
         <span className="linked"><Link2 size={12} /> Länkad stil</span>
       </div>
       <label className="field-row">

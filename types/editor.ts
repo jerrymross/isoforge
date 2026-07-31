@@ -15,7 +15,7 @@ export type Tool =
   | "polygon"
   | "iso-box";
 
-export type WorkspaceMode = "draw" | "convert" | "objects" | "collision";
+export type WorkspaceMode = "draw" | "convert" | "objects" | "collision" | "painter";
 export type TileGuideMode =
   | "floor"
   | "wall-left"
@@ -32,6 +32,13 @@ export type VectorStyle = {
   shadow: boolean;
 };
 
+export type UvPaint = {
+  size: number;
+  top: string[];
+  left: string[];
+  right: string[];
+};
+
 export type VectorObject = {
   id: string;
   name: string;
@@ -42,6 +49,7 @@ export type VectorObject = {
   rotation?: number;
   tilt?: number;
   style: VectorStyle;
+  uvPaint?: UvPaint;
   locked: boolean;
 };
 

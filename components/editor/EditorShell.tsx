@@ -8,6 +8,7 @@ import {
   Download,
   Moon,
   PencilRuler,
+  Paintbrush,
   Shield,
   Redo2,
   Settings2,
@@ -24,6 +25,7 @@ import { TileLibrary } from "@/components/tiles/TileLibrary";
 import { ToolRail } from "@/components/toolbar/ToolRail";
 import { GeneratorPanel } from "@/components/toolbar/GeneratorPanel";
 import { CollisionPanel } from "@/components/toolbar/CollisionPanel";
+import { PainterPanel } from "@/components/painter/PainterPanel";
 import { loadProject } from "@/lib/project-db";
 import {
   normalizeProject,
@@ -203,6 +205,13 @@ export function EditorShell() {
           >
             <Shield size={13} /> Kollision
           </button>
+          <button
+            className={workspaceMode === "painter" ? "active" : ""}
+            onClick={() => setWorkspaceMode("painter")}
+            title="Öppna Painter för markerat objekt"
+          >
+            <Paintbrush size={13} /> Painter
+          </button>
         </div>
         <span className="context-divider" />
         <label>
@@ -252,15 +261,19 @@ export function EditorShell() {
           <ToolRail />
         ) : workspaceMode === "collision" ? (
           <CollisionPanel />
+        ) : workspaceMode === "painter" ? (
+          <div className="workspace-side-placeholder" aria-hidden="true" />
         ) : (
           <GeneratorPanel mode={workspaceMode} />
         )}
         <div className="center-stack">
-          <EditorCanvas />
-          <div className="bottom-dock">
-            <TileLibrary />
-            <LayerPanel />
-          </div>
+          {workspaceMode === "painter" ? <PainterPanel /> : <>
+            <EditorCanvas />
+            <div className="bottom-dock">
+              <TileLibrary />
+              <LayerPanel />
+            </div>
+          </>}
         </div>
         <div className="right-stack"><LivePreview /><Inspector /></div>
       </div>

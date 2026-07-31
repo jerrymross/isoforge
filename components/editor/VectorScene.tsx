@@ -10,6 +10,14 @@ import {
 } from "@/features/drawing/geometry";
 import { shade } from "@/features/tiled-export/exporters";
 
+function uvFaceColor(object: VectorObject, face: "top" | "left" | "right"): string {
+  const cells = object.uvPaint?.[face];
+  if (!cells?.length) return object.style.fill;
+  const counts = new Map<string, number>();
+  cells.forEach((color) => counts.set(color, (counts.get(color) ?? 0) + 1));
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? object.style.fill;
+}
+
 type VectorShapeProps = {
   object: VectorObject;
   selected?: boolean;
@@ -96,7 +104,7 @@ export function VectorShape({
               object.points[5],
               object.points[6],
             ])}
-            fill={shade(object.style.fill, -18)}
+            fill={shade(uvFaceColor(object, "left"), -18)}
             {...common}
           />
           <polygon
@@ -106,17 +114,17 @@ export function VectorShape({
               object.points[5],
               object.points[2],
             ])}
-            fill={shade(object.style.fill, -32)}
+            fill={shade(uvFaceColor(object, "right"), -32)}
             {...common}
           />
           <polygon
             points={pointsToString(object.points.slice(0, 4))}
-            fill={shade(object.style.fill, 12)}
+            fill={shade(uvFaceColor(object, "top"), 12)}
             {...common}
           />
         </>
       ) : (
-        <polygon points={pointsToString(object.points)} fill={object.style.fill} {...common} />
+        <polygon points={pointsToString(object.points)} fill={uvFaceColor(object, "top")} {...common} />
       )}
       {selected && (
         <>

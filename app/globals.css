@@ -1048,6 +1048,46 @@ button:disabled {
   transition: filter 120ms ease;
 }
 
+.painter-panel {
+  min-width: 0;
+  height: 100%;
+  padding: 18px;
+  overflow: auto;
+  background: var(--panel, #fbfcfa);
+}
+.painter-heading { justify-content: space-between; }
+.painter-open-button { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #e5b4a5; border-radius: 5px; padding: 4px 7px; background: #fff7f3; color: #bd5038; font-size: 10px; cursor: pointer; }
+.painter-heading > span { display: inline-flex; align-items: center; gap: 7px; }
+.painter-heading small { color: var(--muted, #72807b); font-weight: 500; }
+.painter-heading button, .empty-painter button, .painter-tool {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line, #d9dfda);
+  border-radius: 6px; padding: 6px 9px; background: var(--surface, #fff); color: inherit; cursor: pointer;
+}
+.painter-toolbar { display: flex; align-items: center; gap: 8px; margin: 18px 0 12px; }
+.painter-color { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted, #72807b); }
+.painter-color input { width: 28px; height: 25px; padding: 1px; border: 1px solid var(--line, #d9dfda); border-radius: 5px; background: transparent; }
+.painter-color code { color: inherit; font-size: 11px; }
+.painter-tool.active { border-color: #ee6a47; color: #c94f35; background: #fff5f1; }
+.painter-face-tabs { display: flex; gap: 5px; border-bottom: 1px solid var(--line, #d9dfda); }
+.painter-face-tabs button { border: 0; border-bottom: 2px solid transparent; padding: 8px 11px; background: transparent; color: var(--muted, #72807b); font-size: 10px; font-weight: 800; letter-spacing: .07em; cursor: pointer; }
+.painter-face-tabs button.active { border-bottom-color: #ee6a47; color: #c94f35; }
+.painter-workspace { display: grid; grid-template-columns: minmax(280px, 1fr) 220px; gap: 24px; align-items: start; padding-top: 22px; }
+.painter-canvas-label { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted, #72807b); font-size: 11px; }
+.painter-canvas-label strong { color: inherit; }
+.painter-grid { display: grid; grid-template-columns: repeat(12, minmax(12px, 1fr)); width: min(100%, 560px); aspect-ratio: 1; border: 1px solid var(--line, #d9dfda); background: #e8ece8; gap: 1px; touch-action: none; }
+.painter-cell { min-width: 0; min-height: 0; padding: 0; border: 0; cursor: crosshair; box-shadow: inset 0 0 0 1px rgba(20, 45, 40, .08); }
+.painter-cell:hover { filter: brightness(1.14); }
+.painter-hint { display: block; margin-top: 9px; color: var(--muted, #72807b); font-size: 11px; }
+.painter-preview-card { border: 1px solid var(--line, #d9dfda); border-radius: 8px; padding: 12px; color: var(--muted, #72807b); font-size: 11px; }
+.uv-layout { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; aspect-ratio: 1; margin-top: 12px; }
+.uv-face { display: grid; place-items: center; color: rgba(255,255,255,.85); font-size: 16px; font-weight: 800; border: 1px solid rgba(30,55,50,.2); }
+.uv-top { grid-column: 1 / 3; }
+.empty-painter { display: grid; align-content: center; justify-items: start; gap: 12px; }
+.empty-painter p { max-width: 380px; color: var(--muted, #72807b); font-size: 13px; line-height: 1.5; }
+html[data-theme="dark"] .painter-panel { background: #18221f; }
+html[data-theme="dark"] .painter-heading button, html[data-theme="dark"] .empty-painter button, html[data-theme="dark"] .painter-tool, html[data-theme="dark"] .painter-preview-card { border-color: #384743; background: #1d2825; }
+html[data-theme="dark"] .painter-tool.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }
+
 .vector-object:hover {
   filter: brightness(1.035);
 }
