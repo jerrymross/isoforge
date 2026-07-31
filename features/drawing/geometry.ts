@@ -57,6 +57,28 @@ export function constrainEllipseToRatio(start: Point, end: Point, ratio: number)
   };
 }
 
+export function makeIsoCylinder(
+  start: Point,
+  end: Point,
+  projectionRatio = 0.5,
+): VectorObject["points"] {
+  const left = Math.min(start.x, end.x);
+  const right = Math.max(start.x, end.x);
+  const top = Math.min(start.y, end.y);
+  const bottom = Math.max(start.y, end.y);
+  const radiusX = Math.max(3, (right - left) / 2);
+  const radiusY = Math.max(2, radiusX * Math.max(0.1, projectionRatio));
+  const centerX = (left + right) / 2;
+  const topCenterY = top + radiusY;
+  const bottomCenterY = Math.max(topCenterY, bottom - radiusY);
+  return [
+    { x: centerX, y: topCenterY },
+    { x: centerX + radiusX, y: topCenterY },
+    { x: centerX, y: topCenterY + radiusY },
+    { x: centerX, y: bottomCenterY },
+  ];
+}
+
 export function roundedPolygonPath(points: Point[], radius = 0): string {
   if (!points.length) return "";
   if (points.length < 3 || radius <= 0) {

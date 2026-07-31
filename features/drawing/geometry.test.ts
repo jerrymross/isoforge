@@ -7,6 +7,7 @@ import {
   ellipseFromBounds,
   isoGridOffset,
   makeIsoBox,
+  makeIsoCylinder,
   normalizeAngle,
   normalizeTilt,
   objectBounds,
@@ -163,6 +164,17 @@ describe("isometrisk geometri", () => {
     expect(end).toEqual({ x: 392, y: 340 });
     expect(Math.max(...ellipse.map((point) => point.x)) - Math.min(...ellipse.map((point) => point.x))).toBe(136);
     expect(Math.max(...ellipse.map((point) => point.y)) - Math.min(...ellipse.map((point) => point.y))).toBe(68);
+  });
+
+  it("builds an isometric cylinder inside the dragged bounds", () => {
+    const cylinder = makeIsoCylinder({ x: 256, y: 200 }, { x: 384, y: 360 }, 0.5);
+
+    expect(cylinder).toEqual([
+      { x: 320, y: 232 },
+      { x: 384, y: 232 },
+      { x: 320, y: 264 },
+      { x: 320, y: 328 },
+    ]);
   });
 
   it("låser linjer till en isometrisk vinkel", () => {

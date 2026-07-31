@@ -18,6 +18,7 @@ import {
   constrainEllipseToRatio,
   ellipseFromBounds,
   makeIsoBox,
+  makeIsoCylinder,
   objectBounds,
   penPathData,
   samplePenPath,
@@ -420,6 +421,8 @@ export function EditorCanvas() {
           })()
         : snappedPoint;
       setDraft(ellipseFromBounds(start, end));
+    } else if (tool === "iso-cylinder") {
+      setDraft(makeIsoCylinder(start, snappedPoint, project.tileHeight / project.tileWidth));
     }
   }
 
@@ -450,22 +453,30 @@ export function EditorCanvas() {
     ) {
       return;
     }
+    if ((tool === "iso-cylinder" && draft.length < 4) || (tool === "ellipse" && draft.length < 12)) {
+      setStart(null);
+      setDraft(null);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      return;
+    }
     const kind = tool === "iso-box" ? "iso-box" : tool;
     const object: VectorObject = {
       id: crypto.randomUUID(),
       name:
-        kind === "iso-box" ? "Isometrisk box" : kind === "line" ? "Linje" : kind === "ellipse" ? "Cirkel / ellips" : "Polygon",
+        kind === "iso-box" ? "Isometrisk box" : kind === "iso-cylinder" ? "Isometrisk cylinder" : kind === "line" ? "Linje" : kind === "ellipse" ? "Cirkel / ellips" : "Polygon",
       kind,
       layerId: selectedLayerId,
       points: draft,
-      height: kind === "iso-box" ? 72 : 0,
-      tilt: kind === "ellipse" ? 0 : undefined,
+      height: kind === "iso-box" ? 72 : kind === "iso-cylinder" ? Math.max(0, draft[3].y - draft[0].y) : 0,
+      tilt: kind === "ellipse" || kind === "iso-cylinder" ? 0 : undefined,
       style: {
         fill: project.style.fillColor,
         stroke: project.style.strokeColor,
         strokeWidth: project.style.strokeWidth,
         opacity: 1,
-        shadow: kind === "iso-box",
+        shadow: kind === "iso-box" || kind === "iso-cylinder",
       },
       locked: false,
     };
@@ -766,7 +777,7 @@ export function EditorCanvas() {
                 object={{
                   id: "draft",
                   name: "Förhandsvisning",
-                  kind: tool === "iso-box" ? "iso-box" : tool === "polygon" ? "polygon" : tool === "ellipse" ? "ellipse" : "line",
+                  kind: tool === "iso-box" ? "iso-box" : tool === "iso-cylinder" ? "iso-cylinder" : tool === "polygon" ? "polygon" : tool === "ellipse" ? "ellipse" : "line",
                   layerId: selectedLayerId,
                   points: draft,
                   height: 72,

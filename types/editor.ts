@@ -14,6 +14,7 @@ export type Tool =
   | "line"
   | "polygon"
   | "ellipse"
+  | "iso-cylinder"
   | "iso-box";
 
 export type WorkspaceMode = "draw" | "convert" | "objects" | "collision" | "painter" | "world";

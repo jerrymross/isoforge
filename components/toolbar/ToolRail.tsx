@@ -6,6 +6,7 @@ import {
   Circle,
   ClipboardPaste,
   Copy,
+  Cylinder,
   Hexagon,
   Link2,
   Link2Off,
@@ -31,6 +32,7 @@ const tools: Array<{
   { id: "line", label: "Rak linje", icon: PenLine, shortcut: "L" },
   { id: "polygon", label: "Polygon", icon: Hexagon, shortcut: "G" },
   { id: "ellipse", label: "Cirkel / ellips", icon: Circle, shortcut: "C" },
+  { id: "iso-cylinder", label: "Isometrisk cylinder", icon: Cylinder, shortcut: "Y" },
   { id: "iso-box", label: "Isometrisk box", icon: Box, shortcut: "B" },
 ];
 
