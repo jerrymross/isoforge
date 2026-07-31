@@ -37,6 +37,23 @@ export function snapPointToGrid(point: Point, gridSize: number): Point {
   };
 }
 
+export function snapPointToTargets(
+  point: Point,
+  targets: Point[],
+  threshold = 10,
+): Point {
+  let result = { ...point };
+  let best = threshold;
+  for (const target of targets) {
+    const distance = Math.hypot(point.x - target.x, point.y - target.y);
+    if (distance < best) {
+      result = { ...target };
+      best = distance;
+    }
+  }
+  return result;
+}
+
 function samePoint(first: Point, second: Point): boolean {
   return first.x === second.x && first.y === second.y;
 }
@@ -152,16 +169,7 @@ export function snapPoint(point: Point, project: Project, threshold = 10): Point
     TILE_CENTER,
     { x: TILE_CENTER.x, y: TILE_CENTER.y + project.tileHeight / 2 },
   ];
-  let result = { ...point };
-  let best = threshold;
-  for (const target of targets) {
-    const distance = Math.hypot(point.x - target.x, point.y - target.y);
-    if (distance < best) {
-      result = { ...target };
-      best = distance;
-    }
-  }
-  return result;
+  return snapPointToTargets(point, targets, threshold);
 }
 
 export function snapIsoLine(start: Point, end: Point): { point: Point; angle: number } {

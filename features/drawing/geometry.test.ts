@@ -18,6 +18,7 @@ import {
   snapIsoLine,
   snapPoint,
   snapPointToGrid,
+  snapPointToTargets,
   scaleObjectFromPivot,
   tileDiamond,
   TILED_ISOMETRIC_TILT,
@@ -96,6 +97,16 @@ describe("isometrisk geometri", () => {
   it("snaps to normal and dense drawing grids", () => {
     expect(snapPointToGrid({ x: 27, y: 37 }, 16)).toEqual({ x: 32, y: 32 });
     expect(snapPointToGrid({ x: 27, y: 37 }, 8)).toEqual({ x: 24, y: 40 });
+  });
+
+  it("prioritizes nearby drawing targets", () => {
+    expect(
+      snapPointToTargets(
+        { x: 29, y: 34 },
+        [{ x: 30, y: 32 }, { x: 80, y: 80 }],
+        8,
+      ),
+    ).toEqual({ x: 30, y: 32 });
   });
 
   it("builds straight and curved pen paths", () => {

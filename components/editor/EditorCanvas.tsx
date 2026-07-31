@@ -20,6 +20,7 @@ import {
   snapIsoLine,
   snapPoint,
   snapPointToGrid,
+  snapPointToTargets,
   TILE_CENTER,
 } from "@/features/drawing/geometry";
 import { sortObjectsByLayer } from "@/features/layers/layer-order";
@@ -130,6 +131,28 @@ export function EditorCanvas() {
     return gridSnap ? snapPointToGrid(point, gridSize) : point;
   }
 
+  function snapToDrawingTargets(point: Point): Point {
+    const threshold = 10 / canvasZoom;
+    const objectTargets = tile.objects.flatMap((object) => object.points);
+    const penTargets = penNodes.map((node) => node.point);
+    const targetSnap = snapPointToTargets(
+      point,
+      [...penTargets, ...objectTargets],
+      threshold,
+    );
+    if (
+      targetSnap.x !== point.x ||
+      targetSnap.y !== point.y
+    ) {
+      return targetSnap;
+    }
+    const guideSnap = snapPoint(point, project, threshold);
+    if (guideSnap.x !== point.x || guideSnap.y !== point.y) {
+      return guideSnap;
+    }
+    return snapToCanvasGrid(point);
+  }
+
   function commitClosedPen() {
     if (penNodes.length < 3) return;
     const object: VectorObject = {
@@ -184,9 +207,7 @@ export function EditorCanvas() {
       return;
     }
     if (tool === "pen") {
-      const point = snapToCanvasGrid(
-        snapPoint(eventPoint(event, viewBox), project),
-      );
+      const point = snapToDrawingTargets(eventPoint(event, viewBox));
       const first = penNodes[0]?.point;
       if (
         first &&
@@ -209,9 +230,7 @@ export function EditorCanvas() {
     ) {
       return;
     }
-    const point = snapToCanvasGrid(
-      snapPoint(eventPoint(event, viewBox), project),
-    );
+    const point = snapToDrawingTargets(eventPoint(event, viewBox));
     event.currentTarget.setPointerCapture(event.pointerId);
     if (tool === "select" || tool === "scale" || tool === "node") {
       selectObject(null);
@@ -223,7 +242,7 @@ export function EditorCanvas() {
 
   function moveCanvas(event: React.PointerEvent<SVGSVGElement>) {
     const point = eventPoint(event, viewBox);
-    const snappedPoint = snapToCanvasGrid(point);
+    const snappedPoint = snapToDrawingTargets(point);
     if (tool === "pen") {
       setPenPointer(snappedPoint);
       if (penDragRef.current) {
@@ -320,7 +339,7 @@ export function EditorCanvas() {
     } else if (tool === "iso-box") {
       setDraft(makeIsoBox(start, snappedPoint, 72));
     } else if (tool === "polygon") {
-      const snapped = snapToCanvasGrid(snapPoint(point, project));
+      const snapped = snapToDrawingTargets(point);
       setDraft([
         start,
         { x: snapped.x + 56, y: snapped.y + 28 },
@@ -387,6 +406,7 @@ export function EditorCanvas() {
     event: React.PointerEvent<SVGGElement>,
     object: VectorObject,
   ) {
+    if (tool === "pen") return;
     event.stopPropagation();
     selectObject(object.id);
     if (tool !== "select" || object.locked) return;
