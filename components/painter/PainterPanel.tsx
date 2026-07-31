@@ -164,7 +164,7 @@ export function PainterPanel() {
         <div className="painter-canvas-wrap">
           <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
           <div
-            className="painter-grid"
+            className={`painter-grid face-${face}`}
             onPointerDown={pointerDown}
             onPointerMove={pointerMove}
             onPointerUp={finishVector}

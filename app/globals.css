@@ -1076,6 +1076,9 @@ button:disabled {
 .painter-canvas-label { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted, #72807b); font-size: 11px; }
 .painter-canvas-label strong { color: inherit; }
 .painter-grid { position: relative; display: grid; grid-template-columns: repeat(12, minmax(12px, 1fr)); width: min(100%, 560px); aspect-ratio: 1; border: 1px solid var(--line, #d9dfda); background: #e8ece8; gap: 1px; touch-action: none; }
+.painter-grid.face-top { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.painter-grid.face-left { clip-path: polygon(0 0, 50% 25%, 50% 100%, 0 75%); }
+.painter-grid.face-right { clip-path: polygon(50% 25%, 100% 0, 100% 75%, 50% 100%); }
 .painter-vector-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .painter-cell { min-width: 0; min-height: 0; padding: 0; border: 0; cursor: crosshair; box-shadow: inset 0 0 0 1px rgba(20, 45, 40, .08); }
 .painter-cell:hover { filter: brightness(1.14); }
