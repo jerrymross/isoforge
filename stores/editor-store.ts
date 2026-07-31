@@ -30,6 +30,7 @@ import {
   snapObjectTilt,
   TILED_ISOMETRIC_TILT,
 } from "@/features/drawing/geometry";
+import { HOUSE_COLLECTION_ID, houseCollectionTiles } from "@/features/library/house-collection";
 
 const now = () => new Date().toISOString();
 const newId = () => crypto.randomUUID();
@@ -101,6 +102,7 @@ export function createEmptyTile(): Tile {
 }
 
 export function createDefaultProject(): Project {
+  const houseTiles = houseCollectionTiles();
   return {
     id: "default-project",
     name: "Nytt isometriskt projekt",
@@ -115,8 +117,11 @@ export function createDefaultProject(): Project {
       fillColor: "#8a9093",
       lightDirection: "top-left",
     },
-    collections: [{ id: "collection-my-tiles", name: "Mina tiles" }],
-    tiles: [createEmptyTile()],
+    collections: [
+      { id: "collection-my-tiles", name: "Mina tiles" },
+      { id: HOUSE_COLLECTION_ID, name: "Hus · färdiga objekt" },
+    ],
+    tiles: [createEmptyTile(), ...houseTiles],
     activeTileId: "tile-start",
     world: { width: 12, height: 12, cells: {} },
     updatedAt: now(),
@@ -125,6 +130,9 @@ export function createDefaultProject(): Project {
 
 export function prepareProjectForLaunch(project: Project): Project {
   const emptyTile = createEmptyTile();
+  const houseTiles = houseCollectionTiles();
+  const hasHouseCollection = project.collections.some((collection) => collection.id === HOUSE_COLLECTION_ID);
+  const existingHouseIds = new Set(project.tiles.filter((tile) => tile.collectionId === HOUSE_COLLECTION_ID).map((tile) => tile.id));
   const collections = project.collections.some(
     (collection) => collection.id === emptyTile.collectionId,
   )
@@ -133,12 +141,14 @@ export function prepareProjectForLaunch(project: Project): Project {
         { id: emptyTile.collectionId, name: "Mina tiles" },
         ...project.collections,
       ];
+  if (!hasHouseCollection) collections.push({ id: HOUSE_COLLECTION_ID, name: "Hus · färdiga objekt" });
   return {
     ...project,
     collections,
     tiles: [
       emptyTile,
       ...project.tiles.filter((tile) => tile.id !== emptyTile.id),
+      ...houseTiles.filter((tile) => !existingHouseIds.has(tile.id)),
     ],
     activeTileId: emptyTile.id,
     updatedAt: now(),
