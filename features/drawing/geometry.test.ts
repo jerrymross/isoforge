@@ -131,6 +131,10 @@ describe("isometrisk geometri", () => {
     expect(roof.slice(1).every((face) => face.length === 3)).toBe(true);
     expect(circle[0]).toHaveLength(48);
     expect(circle[1]).toHaveLength(2);
+    expect(circle[3]).toEqual([
+      { x: 256, y: 336 },
+      { x: 384, y: 336 },
+    ]);
     expect(circle[0][0]).toEqual({ x: 384, y: 304 });
     expect(circle[0][12]).toEqual({ x: 320, y: 336 });
   });

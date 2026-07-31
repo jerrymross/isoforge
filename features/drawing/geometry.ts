@@ -79,13 +79,18 @@ export function tileGuidePolygon(
 ): Point[] {
   if (mode === "circle") {
     const center = { x: TILE_CENTER.x, y: baseline - height / 2 };
-    return Array.from({ length: 48 }, (_, index) => {
+    const ellipse = Array.from({ length: 48 }, (_, index) => {
       const angle = (index / 48) * Math.PI * 2;
       return {
         x: center.x + Math.cos(angle) * width / 2,
         y: center.y + Math.sin(angle) * height / 2,
       };
     });
+    ellipse[0] = { x: center.x + width / 2, y: center.y };
+    ellipse[12] = { x: center.x, y: baseline };
+    ellipse[24] = { x: center.x - width / 2, y: center.y };
+    ellipse[36] = { x: center.x, y: baseline - height };
+    return ellipse;
   }
   if (mode === "roof" || mode === "corner") {
     return tileDiamond(width, height, {
@@ -158,6 +163,10 @@ export function tileGuideFaces(
       primary,
       [primary[0], primary[24]],
       [primary[12], primary[36]],
+      [
+        { x: TILE_CENTER.x - width / 2, y: baseline },
+        { x: TILE_CENTER.x + width / 2, y: baseline },
+      ],
     ];
   }
 

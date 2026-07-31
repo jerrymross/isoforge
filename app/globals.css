@@ -843,6 +843,11 @@ button:disabled {
   font-size: 8px;
 }
 
+.node-option.clipboard-option {
+  min-height: 34px;
+  margin-top: 5px;
+}
+
 .node-option.active {
   border-color: #a9c5bf;
   background: var(--teal-soft);

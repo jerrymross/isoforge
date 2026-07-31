@@ -70,6 +70,8 @@ export function EditorShell() {
     redo,
     deleteSelected,
     duplicateSelected,
+    copySelected,
+    pasteClipboard,
     saveNow,
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
@@ -124,6 +126,12 @@ export function EditorShell() {
       } else if ((event.ctrlKey || event.metaKey) && key === "d") {
         event.preventDefault();
         duplicateSelected();
+      } else if ((event.ctrlKey || event.metaKey) && key === "c") {
+        event.preventDefault();
+        copySelected();
+      } else if ((event.ctrlKey || event.metaKey) && key === "v") {
+        event.preventDefault();
+        pasteClipboard();
       } else if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault();
         deleteSelected();
@@ -136,6 +144,8 @@ export function EditorShell() {
   }, [
     deleteSelected,
     duplicateSelected,
+    copySelected,
+    pasteClipboard,
     redo,
     saveNow,
     selectAllObjects,

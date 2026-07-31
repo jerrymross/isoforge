@@ -34,6 +34,32 @@ import {
 const now = () => new Date().toISOString();
 const newId = () => crypto.randomUUID();
 
+function cloneVectorObject(source: VectorObject): VectorObject {
+  return {
+    ...source,
+    points: source.points.map((point) => ({ ...point })),
+    style: { ...source.style },
+    uvPaint: source.uvPaint ? {
+      ...source.uvPaint,
+      top: [...source.uvPaint.top],
+      left: [...source.uvPaint.left],
+      right: [...source.uvPaint.right],
+      activeColor: source.uvPaint.activeColor ? { ...source.uvPaint.activeColor } : undefined,
+      vectors: source.uvPaint.vectors ? Object.fromEntries(
+        Object.entries(source.uvPaint.vectors).map(([face, vectors]) => [
+          face,
+          vectors?.map((vector) => ({
+            ...vector,
+            points: vector.points.map((point) => ({ ...point })),
+            gradient: vector.gradient ? { ...vector.gradient } : undefined,
+            effects: vector.effects ? { ...vector.effects } : undefined,
+          })),
+        ]),
+      ) : undefined,
+    } : undefined,
+  };
+}
+
 function normalizeGuideMode(
   mode: TileGuideMode | "wall" | undefined,
 ): TileGuideMode {
@@ -177,6 +203,8 @@ type EditorState = {
   autoAngle: boolean;
   autoTilt: boolean;
   proportionalNodes: boolean;
+  clipboard: VectorObject[];
+  clipboardPasteCount: number;
   history: Project[];
   future: Project[];
   autosaveState: "saved" | "saving";
@@ -221,6 +249,8 @@ type EditorState = {
   autoSizeSelected: () => void;
   deleteSelected: () => void;
   duplicateSelected: () => void;
+  copySelected: () => void;
+  pasteClipboard: () => void;
   toggleLayer: (id: string, field: "visible" | "locked") => void;
   addLayer: () => void;
   duplicateLayer: (id: string) => void;
@@ -289,6 +319,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   autoAngle: true,
   autoTilt: true,
   proportionalNodes: false,
+  clipboard: [],
+  clipboardPasteCount: 0,
   history: [],
   future: [],
   autosaveState: "saved",
@@ -710,6 +742,55 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             objects: [...activeTile.objects, ...copies],
           })),
         ),
+        selectedObjectId: copyIds.at(-1) ?? null,
+        selectedObjectIds: copyIds,
+      };
+    }),
+  copySelected: () =>
+    set((state) => {
+      const tile = state.project.tiles.find((item) => item.id === state.project.activeTileId);
+      const selectedIds = new Set(
+        state.selectedObjectIds.length
+          ? state.selectedObjectIds
+          : state.selectedObjectId
+            ? [state.selectedObjectId]
+            : [],
+      );
+      const clipboard = tile?.objects
+        .filter((object) => selectedIds.has(object.id))
+        .map(cloneVectorObject) ?? [];
+      return clipboard.length ? { clipboard, clipboardPasteCount: 0 } : state;
+    }),
+  pasteClipboard: () =>
+    set((state) => {
+      if (!state.clipboard.length) return state;
+      const tile = state.project.tiles.find((item) => item.id === state.project.activeTileId);
+      if (!tile) return state;
+      const pasteCount = state.clipboardPasteCount + 1;
+      const offsetX = pasteCount * 12;
+      const offsetY = pasteCount * 6;
+      const copies = state.clipboard.map((source) => {
+        const copy = cloneVectorObject(source);
+        return {
+          ...copy,
+          id: newId(),
+          name: `${source.name} kopia`,
+          layerId: tile.layers.some((layer) => layer.id === source.layerId)
+            ? source.layerId
+            : state.selectedLayerId,
+          points: copy.points.map((point) => ({ x: point.x + offsetX, y: point.y + offsetY })),
+        };
+      });
+      const copyIds = copies.map((copy) => copy.id);
+      return {
+        ...snapshot(
+          state,
+          updateActiveTile(state.project, (activeTile) => ({
+            ...activeTile,
+            objects: [...activeTile.objects, ...copies],
+          })),
+        ),
+        clipboardPasteCount: pasteCount,
         selectedObjectId: copyIds.at(-1) ?? null,
         selectedObjectIds: copyIds,
       };

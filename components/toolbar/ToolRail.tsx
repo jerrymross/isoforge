@@ -4,6 +4,8 @@ import {
   Box,
   CheckCheck,
   Circle,
+  ClipboardPaste,
+  Copy,
   Hexagon,
   Link2,
   Link2Off,
@@ -36,9 +38,14 @@ export function ToolRail() {
   const {
     tool,
     proportionalNodes,
+    selectedObjectId,
+    selectedObjectIds,
+    clipboard,
     setTool,
     setProportionalNodes,
     selectAllObjects,
+    copySelected,
+    pasteClipboard,
   } = useEditorStore();
   return (
     <nav className="tool-rail" aria-label="Ritverktyg">
@@ -71,15 +78,37 @@ export function ToolRail() {
         </button>
       )}
       {tool === "select" && (
-        <button
-          className="node-option"
-          onClick={selectAllObjects}
-          title="Markera alla olåsta objekt på synliga lager"
-        >
-          <CheckCheck size={14} />
-          <span>Markera allt</span>
-          <b>Ctrl+A</b>
-        </button>
+        <>
+          <button
+            className="node-option"
+            onClick={selectAllObjects}
+            title="Markera alla olåsta objekt på synliga lager"
+          >
+            <CheckCheck size={14} />
+            <span>Markera allt</span>
+            <b>Ctrl+A</b>
+          </button>
+          <button
+            className="node-option clipboard-option"
+            disabled={!selectedObjectId && !selectedObjectIds.length}
+            onClick={copySelected}
+            title="Kopiera markerade objekt"
+          >
+            <Copy size={14} />
+            <span>Kopiera</span>
+            <b>Ctrl+C</b>
+          </button>
+          <button
+            className="node-option clipboard-option"
+            disabled={!clipboard.length}
+            onClick={pasteClipboard}
+            title="Klistra in kopierade objekt"
+          >
+            <ClipboardPaste size={14} />
+            <span>Klistra in</span>
+            <b>Ctrl+V</b>
+          </button>
+        </>
       )}
       <p className="tool-hint">Kortkommandon fungerar när du ritar.</p>
     </nav>
