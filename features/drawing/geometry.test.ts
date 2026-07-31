@@ -91,11 +91,15 @@ describe("isometrisk geometri", () => {
   });
 
   it("shows every face of a raised block and half-depth walls", () => {
+    const floorFaces = tileGuideFaces("floor", 128, 64, 336);
     const blockFaces = tileGuideFaces("floor-object", 128, 64, 336);
     const wallLeftFaces = tileGuideFaces("wall-left", 128, 64, 336);
     const wallRightFaces = tileGuideFaces("wall-right", 128, 64, 336);
 
+    expect(floorFaces).toHaveLength(5);
     expect(blockFaces).toHaveLength(5);
+    expect(floorFaces[0][2].y).toBe(304);
+    expect(blockFaces[0][2].y).toBe(272);
     expect(wallLeftFaces).toHaveLength(6);
     expect(wallRightFaces).toHaveLength(6);
     expect(wallLeftFaces[1][0].x - wallLeftFaces[0][0].x).toBe(32);
