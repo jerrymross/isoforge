@@ -160,6 +160,7 @@ type EditorState = {
   tool: Tool;
   workspaceMode: WorkspaceMode;
   selectedObjectId: string | null;
+  selectedObjectIds: string[];
   selectedCollisionId: string | null;
   selectedLayerId: string;
   zoom: number;
@@ -178,7 +179,8 @@ type EditorState = {
   autosaveState: "saved" | "saving";
   setTool: (tool: Tool) => void;
   setWorkspaceMode: (mode: WorkspaceMode) => void;
-  selectObject: (id: string | null) => void;
+  selectObject: (id: string | null, additive?: boolean) => void;
+  selectAllObjects: () => void;
   selectCollision: (id: string | null) => void;
   setZoom: (zoom: number) => void;
   setCanvasZoom: (zoom: number) => void;
@@ -197,6 +199,7 @@ type EditorState = {
   setObjectAngle: (id: string, angle: number) => void;
   setObjectTilt: (id: string, tilt: number) => void;
   moveObject: (id: string, points: Point[]) => void;
+  moveObjects: (updates: Array<{ id: string; points: Point[] }>) => void;
   scaleObject: (
     id: string,
     source: VectorObject,
@@ -266,6 +269,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   tool: "select",
   workspaceMode: "draw",
   selectedObjectId: null,
+  selectedObjectIds: [],
   selectedCollisionId: null,
   selectedLayerId: "base",
   zoom: 1,
@@ -285,10 +289,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTool: (tool) => set({ tool }),
   setWorkspaceMode: (workspaceMode) =>
     set({ workspaceMode, showCollisions: workspaceMode === "collision" }),
-  selectObject: (selectedObjectId) =>
-    set({ selectedObjectId, selectedCollisionId: null }),
+  selectObject: (selectedObjectId, additive = false) =>
+    set((state) => {
+      if (!selectedObjectId) {
+        return {
+          selectedObjectId: null,
+          selectedObjectIds: [],
+          selectedCollisionId: null,
+        };
+      }
+      const selectedObjectIds = additive
+        ? state.selectedObjectIds.includes(selectedObjectId)
+          ? state.selectedObjectIds.filter((id) => id !== selectedObjectId)
+          : [...state.selectedObjectIds, selectedObjectId]
+        : [selectedObjectId];
+      return {
+        selectedObjectId: selectedObjectIds.at(-1) ?? null,
+        selectedObjectIds,
+        selectedCollisionId: null,
+      };
+    }),
+  selectAllObjects: () =>
+    set((state) => {
+      const tile = state.project.tiles.find(
+        (item) => item.id === state.project.activeTileId,
+      );
+      const selectedObjectIds =
+        tile?.objects
+          .filter((object) => {
+            const layer = tile.layers.find((item) => item.id === object.layerId);
+            return !object.locked && layer?.visible !== false;
+          })
+          .map((object) => object.id) ?? [];
+      return {
+        selectedObjectIds,
+        selectedObjectId: selectedObjectIds.at(-1) ?? null,
+        selectedCollisionId: null,
+      };
+    }),
   selectCollision: (selectedCollisionId) =>
-    set({ selectedCollisionId, selectedObjectId: null }),
+    set({ selectedCollisionId, selectedObjectId: null, selectedObjectIds: [] }),
   setZoom: (zoom) => set({ zoom }),
   setCanvasZoom: (canvasZoom) => set({ canvasZoom }),
   setGridSnap: (gridSnap) => set({ gridSnap }),
@@ -351,6 +391,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           })),
         ),
         selectedObjectId: preparedObjects.at(-1)?.id ?? null,
+        selectedObjectIds: preparedObjects.at(-1)?.id
+          ? [preparedObjects.at(-1)!.id]
+          : [],
         selectedLayerId:
           preparedObjects.at(-1)?.layerId ?? state.selectedLayerId,
       };
@@ -407,6 +450,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       })),
       autosaveState: "saving",
     })),
+  moveObjects: (updates) =>
+    set((state) => {
+      const pointsById = new Map(
+        updates.map((update) => [update.id, update.points]),
+      );
+      return {
+        project: updateActiveTile(state.project, (tile) => ({
+          ...tile,
+          objects: tile.objects.map((object) => {
+            const points = pointsById.get(object.id);
+            return points ? { ...object, points } : object;
+          }),
+        })),
+        autosaveState: "saving",
+      };
+    }),
   scaleObject: (id, source, pivot, scale) =>
     set((state) => ({
       project: updateActiveTile(state.project, (tile) => ({
@@ -453,6 +512,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ),
         selectedCollisionId: collision.id,
         selectedObjectId: null,
+        selectedObjectIds: [],
         showCollisions: true,
       };
     }),
@@ -500,10 +560,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         (item) => item.id === state.project.activeTileId,
       );
       if (!tile) return state;
+      const selectedIds = new Set(state.selectedObjectIds);
       const targets = tile.objects.filter(
         (object) =>
           !object.locked &&
-          (!state.selectedObjectId || object.id === state.selectedObjectId),
+          (!selectedIds.size || selectedIds.has(object.id)),
       );
       if (!targets.length) return state;
       const placed = new Map(
@@ -528,12 +589,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         (item) => item.id === state.project.activeTileId,
       );
       if (!tile) return state;
+      const selectedIds = new Set(state.selectedObjectIds);
       const targetIds = new Set(
         tile.objects
           .filter(
             (object) =>
               !object.locked &&
-              (!state.selectedObjectId || object.id === state.selectedObjectId),
+              (!selectedIds.size || selectedIds.has(object.id)),
           )
           .map((object) => object.id),
       );
@@ -559,10 +621,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         (item) => item.id === state.project.activeTileId,
       );
       if (!tile) return state;
+      const selectedIds = new Set(state.selectedObjectIds);
       const targets = tile.objects.filter(
         (object) =>
           !object.locked &&
-          (!state.selectedObjectId || object.id === state.selectedObjectId),
+          (!selectedIds.size || selectedIds.has(object.id)),
       );
       if (!targets.length) return state;
       const sized = new Map(
@@ -584,18 +647,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }),
   deleteSelected: () =>
     set((state) => {
-      if (!state.selectedObjectId) return state;
+      const selectedIds = new Set(
+        state.selectedObjectIds.length
+          ? state.selectedObjectIds
+          : state.selectedObjectId
+            ? [state.selectedObjectId]
+            : [],
+      );
+      if (!selectedIds.size) return state;
       return {
         ...snapshot(
           state,
           updateActiveTile(state.project, (tile) => ({
             ...tile,
             objects: tile.objects.filter(
-              (object) => object.id !== state.selectedObjectId,
+              (object) => !selectedIds.has(object.id),
             ),
           })),
         ),
         selectedObjectId: null,
+        selectedObjectIds: [],
       };
     }),
   duplicateSelected: () =>
@@ -603,28 +674,38 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const tile = state.project.tiles.find(
         (item) => item.id === state.project.activeTileId,
       );
-      const source = tile?.objects.find(
-        (object) => object.id === state.selectedObjectId,
+      const selectedIds = new Set(
+        state.selectedObjectIds.length
+          ? state.selectedObjectIds
+          : state.selectedObjectId
+            ? [state.selectedObjectId]
+            : [],
       );
-      if (!source) return state;
-      const copy: VectorObject = {
-        ...source,
-        id: newId(),
-        name: `${source.name} kopia`,
-        points: source.points.map((point) => ({
-          x: point.x + 12,
-          y: point.y + 6,
-        })),
-      };
+      const copies: VectorObject[] =
+        tile?.objects
+          .filter((object) => selectedIds.has(object.id))
+          .map((source) => ({
+            ...source,
+            id: newId(),
+            name: `${source.name} kopia`,
+            points: source.points.map((point) => ({
+              x: point.x + 12,
+              y: point.y + 6,
+            })),
+            style: { ...source.style },
+          })) ?? [];
+      if (!copies.length) return state;
+      const copyIds = copies.map((copy) => copy.id);
       return {
         ...snapshot(
           state,
           updateActiveTile(state.project, (activeTile) => ({
             ...activeTile,
-            objects: [...activeTile.objects, copy],
+            objects: [...activeTile.objects, ...copies],
           })),
         ),
-        selectedObjectId: copy.id,
+        selectedObjectId: copyIds.at(-1) ?? null,
+        selectedObjectIds: copyIds,
       };
     }),
   toggleLayer: (id, field) =>
@@ -693,6 +774,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ),
         selectedLayerId: layer.id,
         selectedObjectId: copies[0]?.id ?? null,
+        selectedObjectIds: copies[0]?.id ? [copies[0].id] : [],
       };
     }),
   deleteLayer: (id) =>
@@ -799,6 +881,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return {
         project: { ...state.project, activeTileId: id },
         selectedObjectId: tile.objects[0]?.id ?? null,
+        selectedObjectIds: tile.objects[0]?.id ? [tile.objects[0].id] : [],
         selectedCollisionId: tile.collisions[0]?.id ?? null,
         selectedLayerId: tile.objects[0]?.layerId ?? tile.layers[0]?.id ?? "base",
       };
@@ -825,6 +908,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: null,
+        selectedObjectIds: [],
         selectedCollisionId: null,
         selectedLayerId: "base",
         tool: "iso-box",
@@ -865,6 +949,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: tile.objects[0]?.id ?? null,
+        selectedObjectIds: tile.objects[0]?.id ? [tile.objects[0].id] : [],
         selectedCollisionId: tile.collisions[0]?.id ?? null,
       };
     }),
@@ -883,6 +968,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: active.objects[0]?.id ?? null,
+        selectedObjectIds: active.objects[0]?.id ? [active.objects[0].id] : [],
         selectedCollisionId: active.collisions[0]?.id ?? null,
       };
     }),
@@ -946,6 +1032,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           updatedAt: now(),
         }),
         selectedObjectId: imported[0].objects[0]?.id ?? null,
+        selectedObjectIds: imported[0].objects[0]?.id
+          ? [imported[0].objects[0].id]
+          : [],
       };
     }),
   undo: () =>

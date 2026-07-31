@@ -60,6 +60,7 @@ export function EditorShell() {
     setTool,
     setWorkspaceMode,
     setAutoTilt,
+    selectAllObjects,
     undo,
     redo,
     deleteSelected,
@@ -83,6 +84,7 @@ export function EditorShell() {
         useEditorStore.setState({
           project: prepareProjectForLaunch(normalizeProject(saved)),
           selectedObjectId: null,
+          selectedObjectIds: [],
           selectedCollisionId: null,
           autosaveState: "saved",
         });
@@ -101,7 +103,11 @@ export function EditorShell() {
       const target = event.target as HTMLElement | null;
       if (target?.matches("input, textarea, select")) return;
       const key = event.key.toLowerCase();
-      if ((event.ctrlKey || event.metaKey) && key === "s") {
+      if ((event.ctrlKey || event.metaKey) && key === "a") {
+        event.preventDefault();
+        setTool("select");
+        selectAllObjects();
+      } else if ((event.ctrlKey || event.metaKey) && key === "s") {
         event.preventDefault();
         void saveNow();
       } else if ((event.ctrlKey || event.metaKey) && key === "z" && event.shiftKey) {
@@ -122,7 +128,15 @@ export function EditorShell() {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [deleteSelected, duplicateSelected, redo, saveNow, setTool, undo]);
+  }, [
+    deleteSelected,
+    duplicateSelected,
+    redo,
+    saveNow,
+    selectAllObjects,
+    setTool,
+    undo,
+  ]);
 
   function toggleTheme() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";

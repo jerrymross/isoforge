@@ -69,6 +69,7 @@ export function EditorCanvas() {
     tool,
     workspaceMode,
     selectedObjectId,
+    selectedObjectIds,
     selectedCollisionId,
     selectedLayerId,
     showGuides,
@@ -82,6 +83,7 @@ export function EditorCanvas() {
     selectCollision,
     addObject,
     moveObject,
+    moveObjects,
     scaleObject,
     beginContinuousEdit,
     moveAnchorPoint,
@@ -102,7 +104,10 @@ export function EditorCanvas() {
   const [penNodes, setPenNodes] = useState<PenNode[]>([]);
   const [penPointer, setPenPointer] = useState<Point | null>(null);
   const penDragRef = useRef<{ index: number; origin: Point } | null>(null);
-  const dragRef = useRef<{ id: string; start: Point; points: Point[] } | null>(null);
+  const dragRef = useRef<{
+    start: Point;
+    objects: Array<{ id: string; points: Point[] }>;
+  } | null>(null);
   const anchorDragRef = useRef<AnchorHandle | null>(null);
   const scaleDragRef = useRef<{
     id: string;
@@ -323,11 +328,13 @@ export function EditorCanvas() {
       const rawDy = point.y - dragRef.current.start.y;
       const dx = gridSnap ? Math.round(rawDx / gridSize) * gridSize : rawDx;
       const dy = gridSnap ? Math.round(rawDy / gridSize) * gridSize : rawDy;
-      moveObject(
-        dragRef.current.id,
-        dragRef.current.points.map((original) => ({
-          x: original.x + dx,
-          y: original.y + dy,
+      moveObjects(
+        dragRef.current.objects.map((source) => ({
+          id: source.id,
+          points: source.points.map((original) => ({
+            x: original.x + dx,
+            y: original.y + dy,
+          })),
         })),
       );
       return;
@@ -409,12 +416,27 @@ export function EditorCanvas() {
   ) {
     if (tool === "pen") return;
     event.stopPropagation();
-    selectObject(object.id);
+    if (event.shiftKey) {
+      selectObject(object.id, true);
+      return;
+    }
     if (tool !== "select" || object.locked) return;
+    const dragIds = selectedObjectIds.includes(object.id)
+      ? selectedObjectIds
+      : [object.id];
+    if (!selectedObjectIds.includes(object.id)) {
+      selectObject(object.id);
+    }
     const svg = event.currentTarget.ownerSVGElement;
     if (!svg) return;
     const point = clientPoint(svg, event.clientX, event.clientY, viewBox);
-    dragRef.current = { id: object.id, start: point, points: object.points };
+    beginContinuousEdit();
+    dragRef.current = {
+      start: point,
+      objects: tile.objects
+        .filter((item) => dragIds.includes(item.id) && !item.locked)
+        .map((item) => ({ id: item.id, points: item.points })),
+    };
     svg.setPointerCapture(event.pointerId);
   }
 
@@ -644,7 +666,7 @@ export function EditorCanvas() {
                   tile.layers.find((layer) => layer.id === object.layerId)
                     ?.opacity ?? 1
                 }
-                selected={selectedObjectId === object.id}
+                selected={selectedObjectIds.includes(object.id)}
                 nodesInteractive={
                   tool === "node" && selectedObjectId === object.id
                 }

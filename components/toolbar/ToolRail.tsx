@@ -2,6 +2,7 @@
 
 import {
   Box,
+  CheckCheck,
   Hexagon,
   Link2,
   Link2Off,
@@ -35,6 +36,7 @@ export function ToolRail() {
     proportionalNodes,
     setTool,
     setProportionalNodes,
+    selectAllObjects,
   } = useEditorStore();
   return (
     <nav className="tool-rail" aria-label="Ritverktyg">
@@ -64,6 +66,17 @@ export function ToolRail() {
           {proportionalNodes ? <Link2 size={14} /> : <Link2Off size={14} />}
           <span>Behåll proportioner</span>
           <b>{proportionalNodes ? "På" : "Av"}</b>
+        </button>
+      )}
+      {tool === "select" && (
+        <button
+          className="node-option"
+          onClick={selectAllObjects}
+          title="Markera alla olåsta objekt på synliga lager"
+        >
+          <CheckCheck size={14} />
+          <span>Markera allt</span>
+          <b>Ctrl+A</b>
         </button>
       )}
       <p className="tool-hint">Kortkommandon fungerar när du ritar.</p>
