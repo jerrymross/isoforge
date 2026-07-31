@@ -19,7 +19,7 @@ function box(
   id: string,
   name: string,
   width: number,
-  depth: number,
+  _depth: number,
   height: number,
   center: Point,
   fill: string,
@@ -30,10 +30,12 @@ function box(
     name,
     kind: "iso-box",
     layerId,
-    points: makeIsoBox(center, { x: center.x + width / 2, y: center.y + depth / 2 }, height),
+    // Keep every footprint on the project's 2:1 isometric axes.
+    points: makeIsoBox(center, { x: center.x + width / 2, y: center.y + width / 4 }, height),
     height,
     style: style(fill),
     locked: false,
+    rotation: 0,
     tilt: 0,
   };
 }
@@ -69,6 +71,8 @@ export function houseCollectionTiles(): Tile[] {
     style: style("#8a9093", "#3d484d", false),
     cornerRadius: 3,
     locked: false,
+    rotation: 0,
+    tilt: 0,
   };
   const roof: VectorObject = {
     id: "house-roof-object",
@@ -77,30 +81,33 @@ export function houseCollectionTiles(): Tile[] {
     layerId: "base",
     points: [
       { x: TILE_CENTER.x, y: TILE_CENTER.y - 104 },
-      { x: TILE_CENTER.x + 70, y: TILE_CENTER.y - 68 },
-      { x: TILE_CENTER.x, y: TILE_CENTER.y - 32 },
-      { x: TILE_CENTER.x - 70, y: TILE_CENTER.y - 68 },
+      { x: TILE_CENTER.x + 64, y: TILE_CENTER.y - 72 },
+      { x: TILE_CENTER.x, y: TILE_CENTER.y - 40 },
+      { x: TILE_CENTER.x - 64, y: TILE_CENTER.y - 72 },
     ],
     height: 0,
     style: style("#667177", "#3d484d"),
     cornerRadius: 5,
     locked: false,
+    rotation: 0,
     tilt: 0,
   };
   const chimney: VectorObject = {
     ...box("house-chimney-object", "Skorsten", 20, 20, 58, { x: TILE_CENTER.x + 26, y: TILE_CENTER.y - 74 }, "#737b7f"),
     kind: "iso-cylinder",
     points: makeIsoCylinder({ x: TILE_CENTER.x + 16, y: TILE_CENTER.y - 102 }, { x: TILE_CENTER.x + 36, y: TILE_CENTER.y - 42 }, 0.5),
+    rotation: 0,
+    tilt: 0,
   };
   return [
     tile("house-floor", "Husgolv", floor, "Hus · grund"),
-    tile("house-wall-left", "Vägg vänster", box("house-wall-left-object", "Vägg vänster", 112, 10, 112, { x: TILE_CENTER.x - 30, y: TILE_CENTER.y + 12 }, "#9da4a7"), "Hus · vägg"),
-    tile("house-wall-right", "Vägg höger", box("house-wall-right-object", "Vägg höger", 112, 10, 112, { x: TILE_CENTER.x + 30, y: TILE_CENTER.y + 12 }, "#929a9e"), "Hus · vägg"),
+    tile("house-wall-left", "Vägg vänster", box("house-wall-left-object", "Vägg vänster", 112, 56, 112, { x: TILE_CENTER.x - 30, y: 308 }, "#9da4a7"), "Hus · vägg"),
+    tile("house-wall-right", "Vägg höger", box("house-wall-right-object", "Vägg höger", 112, 56, 112, { x: TILE_CENTER.x + 30, y: 308 }, "#929a9e"), "Hus · vägg"),
     tile("house-roof", "Sadeltak", roof, "Hus · tak"),
-    tile("house-door", "Dörr", box("house-door-object", "Dörr", 38, 9, 76, { x: TILE_CENTER.x, y: TILE_CENTER.y + 12 }, "#59656a", "details"), "Hus · detaljer"),
-    tile("house-window", "Fönster", box("house-window-object", "Fönster", 52, 8, 48, { x: TILE_CENTER.x, y: TILE_CENTER.y - 12 }, "#b8c5c8", "details"), "Hus · detaljer"),
+    tile("house-door", "Dörr", box("house-door-object", "Dörr", 38, 19, 76, { x: TILE_CENTER.x, y: 326.5 }, "#59656a", "details"), "Hus · detaljer"),
+    tile("house-window", "Fönster", box("house-window-object", "Fönster", 52, 26, 48, { x: TILE_CENTER.x, y: 316 }, "#b8c5c8", "details"), "Hus · detaljer"),
     tile("house-chimney", "Skorsten", chimney, "Hus · tak"),
-    tile("house-table", "Bord", box("house-table-object", "Bord", 58, 34, 10, { x: TILE_CENTER.x, y: TILE_CENTER.y - 8 }, "#7d878b", "details"), "Hus · möbler"),
+    tile("house-table", "Bord", box("house-table-object", "Bord", 58, 29, 10, { x: TILE_CENTER.x, y: 321.5 }, "#7d878b", "details"), "Hus · möbler"),
   ];
 }
 
