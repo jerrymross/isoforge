@@ -45,6 +45,18 @@ export function ellipseFromBounds(start: Point, end: Point, segments = 48): Poin
   });
 }
 
+export function constrainEllipseToRatio(start: Point, end: Point, ratio: number): Point {
+  const safeRatio = Math.max(0.001, ratio);
+  const width = Math.max(
+    Math.abs(end.x - start.x),
+    Math.abs(end.y - start.y) / safeRatio,
+  );
+  return {
+    x: start.x + Math.sign(end.x - start.x || 1) * width,
+    y: start.y + Math.sign(end.y - start.y || 1) * width * safeRatio,
+  };
+}
+
 export function roundedPolygonPath(points: Point[], radius = 0): string {
   if (!points.length) return "";
   if (points.length < 3 || radius <= 0) {

@@ -3,6 +3,7 @@ import {
   autoPlaceObjects,
   autoSizeObjects,
   autoSizeObjectsToTile,
+  constrainEllipseToRatio,
   ellipseFromBounds,
   isoGridOffset,
   makeIsoBox,
@@ -153,6 +154,15 @@ describe("isometrisk geometri", () => {
     expect(ellipse[12]).toEqual({ x: 64, y: 64 });
     expect(rounded.match(/ Q /g)).toHaveLength(4);
     expect(rounded.endsWith(" Z")).toBe(true);
+  });
+
+  it("locks a circle-tool drag to the isometric guide ratio", () => {
+    const end = constrainEllipseToRatio({ x: 256, y: 272 }, { x: 384, y: 340 }, 0.5);
+    const ellipse = ellipseFromBounds({ x: 256, y: 272 }, end);
+
+    expect(end).toEqual({ x: 392, y: 340 });
+    expect(Math.max(...ellipse.map((point) => point.x)) - Math.min(...ellipse.map((point) => point.x))).toBe(136);
+    expect(Math.max(...ellipse.map((point) => point.y)) - Math.min(...ellipse.map((point) => point.y))).toBe(68);
   });
 
   it("låser linjer till en isometrisk vinkel", () => {

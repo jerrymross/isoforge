@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  constrainEllipseToRatio,
   ellipseFromBounds,
   makeIsoBox,
   objectBounds,
@@ -25,6 +26,7 @@ import {
   snapPointToGrid,
   snapPointToTargets,
   TILE_CENTER,
+  tileGuidePolygon,
 } from "@/features/drawing/geometry";
 import { sortObjectsByLayer } from "@/features/layers/layer-order";
 import { useEditorStore } from "@/stores/editor-store";
@@ -143,9 +145,24 @@ export function EditorCanvas() {
     const threshold = 10 / canvasZoom;
     const objectTargets = tile.objects.flatMap((object) => object.points);
     const penTargets = penNodes.map((node) => node.point);
+    const guidePolygon = tileGuidePolygon(
+      tile.guideMode ?? "floor",
+      project.tileWidth,
+      project.tileHeight,
+      tile.anchor.baseline,
+    );
+    const guideTargets = tile.guideMode === "circle" && guidePolygon.length >= 48
+      ? [
+          guidePolygon[0], guidePolygon[12], guidePolygon[24], guidePolygon[36],
+          { x: guidePolygon[24].x, y: guidePolygon[36].y },
+          { x: guidePolygon[0].x, y: guidePolygon[36].y },
+          { x: guidePolygon[0].x, y: guidePolygon[12].y },
+          { x: guidePolygon[24].x, y: guidePolygon[12].y },
+        ]
+      : guidePolygon;
     const targetSnap = snapPointToTargets(
       point,
-      [...penTargets, ...objectTargets],
+      [...penTargets, ...objectTargets, ...guideTargets],
       threshold,
     );
     if (
@@ -391,7 +408,9 @@ export function EditorCanvas() {
         { x: snapped.x - 56, y: snapped.y + 28 },
       ]);
     } else if (tool === "ellipse") {
-      const end = event.shiftKey
+      const end = tile.guideMode === "circle"
+        ? constrainEllipseToRatio(start, snappedPoint, project.tileHeight / project.tileWidth)
+        : event.shiftKey
         ? (() => {
             const size = Math.max(Math.abs(snappedPoint.x - start.x), Math.abs(snappedPoint.y - start.y));
             return {
@@ -440,6 +459,7 @@ export function EditorCanvas() {
       layerId: selectedLayerId,
       points: draft,
       height: kind === "iso-box" ? 72 : 0,
+      tilt: kind === "ellipse" ? 0 : undefined,
       style: {
         fill: project.style.fillColor,
         stroke: project.style.strokeColor,
