@@ -55,18 +55,34 @@ function UvCellOverlay({ object, face, quad }: { object: VectorObject; face: "to
 }
 
 function UvVectorOverlay({ object, face, quad }: { object: VectorObject; face: "top" | "left" | "right"; quad: { x: number; y: number }[] }) {
-  return (object.uvPaint?.vectors?.[face] ?? []).map((vector, index) => (
-    <path
-      key={`uv-vector-${face}-${index}`}
-      d={uvVectorPath(vector.points, quad)}
-      fill="none"
-      stroke={vector.color}
-      strokeWidth={Math.max(1, vector.width * 64)}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      vectorEffect="non-scaling-stroke"
-    />
-  ));
+  const vectors = object.uvPaint?.vectors?.[face] ?? [];
+  const safeObjectId = object.id.replace(/[^a-zA-Z0-9_-]/g, "");
+  return (
+    <g className="uv-vector-overlay">
+      <defs>
+        {vectors.map((vector, index) => vector.gradient && (
+          <linearGradient key={`uv-gradient-${index}`} id={`uv-gradient-${safeObjectId}-${face}-${vector.id ?? index}`} x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform={`rotate(${vector.gradient.angle} .5 .5)`}>
+            <stop offset="0" stopColor={vector.gradient.from} />
+            <stop offset="1" stopColor={vector.gradient.to} />
+          </linearGradient>
+        ))}
+      </defs>
+      {vectors.map((vector, index) => {
+        if (vector.visible === false) return null;
+        const id = vector.id ?? index;
+        const data = `${uvVectorPath(vector.points, quad)}${vector.closed ? " Z" : ""}`;
+        const fill = vector.closed ? vector.gradient ? `url(#uv-gradient-${safeObjectId}-${face}-${id})` : vector.fill ?? "none" : "none";
+        const width = Math.max(1, vector.width * 64);
+        return (
+          <g key={`uv-vector-${face}-${id}`}>
+            {vector.effects?.shadow && <path d={data} fill={vector.closed ? "rgba(0,0,0,.22)" : "none"} stroke="rgba(0,0,0,.28)" strokeWidth={width} transform="translate(2 2)" />}
+            {vector.effects?.bevel && <path d={data} fill="none" stroke="rgba(255,255,255,.62)" strokeWidth={width + 1.4} transform="translate(-.7 -.7)" />}
+            <path d={data} fill={fill} stroke={vector.color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </g>
+        );
+      })}
+    </g>
+  );
 }
 
 type VectorShapeProps = {

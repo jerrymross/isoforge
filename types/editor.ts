@@ -43,9 +43,23 @@ export type UvPaint = {
 };
 
 export type UvVectorPath = {
+  id?: string;
+  name?: string;
   points: Point[];
   color: string;
   width: number;
+  closed?: boolean;
+  fill?: string;
+  gradient?: {
+    from: string;
+    to: string;
+    angle: number;
+  };
+  visible?: boolean;
+  effects?: {
+    shadow?: boolean;
+    bevel?: boolean;
+  };
 };
 
 export type VectorObject = {
