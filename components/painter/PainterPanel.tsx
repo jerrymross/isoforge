@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Brush, ChevronLeft, Eraser, Paintbrush } from "lucide-react";
 import type { UvPaint, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
@@ -32,15 +32,33 @@ export function PainterPanel() {
   const [face, setFace] = useState<FaceId>("top");
   const [color, setColor] = useState("#ee6a47");
   const painting = useRef(false);
+  const paintRef = useRef<{ objectId: string; paint: UvPaint } | null>(null);
   const paint = useMemo(() => (object ? makePaint(object) : null), [object]);
+
+  useEffect(() => {
+    if (object && paint && paintRef.current?.objectId !== object.id) {
+      paintRef.current = { objectId: object.id, paint };
+    }
+  }, [object, paint]);
 
   function paintCell(index: number, erase = false) {
     if (!object || !paint) return;
-    const next = { ...paint, [face]: [...paint[face]] } as UvPaint;
+    const current = paintRef.current?.paint ?? paint;
+    const next = { ...current, [face]: [...current[face]] } as UvPaint;
     const nextColor = erase ? object.style.fill : color;
     next[face][index] = nextColor;
-    next.activeColor = { ...paint.activeColor, [face]: nextColor };
+    next.activeColor = { ...current.activeColor, [face]: nextColor };
+    paintRef.current = { objectId: object.id, paint: next };
     updateObject(object.id, { uvPaint: next });
+  }
+
+  function paintAtPointer(event: React.PointerEvent<HTMLDivElement>) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const column = Math.floor(((event.clientX - bounds.left) / bounds.width) * UV_SIZE);
+    const row = Math.floor(((event.clientY - bounds.top) / bounds.height) * UV_SIZE);
+    if (column >= 0 && column < UV_SIZE && row >= 0 && row < UV_SIZE) {
+      paintCell(row * UV_SIZE + column);
+    }
   }
 
   if (!object || !paint) {
@@ -71,15 +89,19 @@ export function PainterPanel() {
       <div className="painter-workspace">
         <div className="painter-canvas-wrap">
           <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
-          <div className="painter-grid" onPointerLeave={() => { painting.current = false; }}>
+          <div
+            className="painter-grid"
+            onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); painting.current = true; paintAtPointer(event); }}
+            onPointerMove={(event) => { if (painting.current) paintAtPointer(event); }}
+            onPointerUp={() => { painting.current = false; }}
+            onPointerCancel={() => { painting.current = false; }}
+            onPointerLeave={() => { painting.current = false; }}
+          >
             {paint[face].map((cell, index) => (
               <button
                 key={`${face}-${index}`}
                 className="painter-cell"
                 style={{ backgroundColor: cell }}
-                onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); painting.current = true; paintCell(index); }}
-                onPointerEnter={() => { if (painting.current) paintCell(index); }}
-                onPointerUp={() => { painting.current = false; }}
                 aria-label={`${activeFace.label} cell ${index + 1}`}
               />
             ))}
