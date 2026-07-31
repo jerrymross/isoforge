@@ -21,6 +21,7 @@ function makePaint(object: VectorObject): UvPaint {
     top: Array(UV_SIZE * UV_SIZE).fill(object.style.fill),
     left: Array(UV_SIZE * UV_SIZE).fill(object.style.fill),
     right: Array(UV_SIZE * UV_SIZE).fill(object.style.fill),
+    activeColor: {},
   };
 }
 
@@ -36,7 +37,9 @@ export function PainterPanel() {
   function paintCell(index: number, erase = false) {
     if (!object || !paint) return;
     const next = { ...paint, [face]: [...paint[face]] } as UvPaint;
-    next[face][index] = erase ? object.style.fill : color;
+    const nextColor = erase ? object.style.fill : color;
+    next[face][index] = nextColor;
+    next.activeColor = { ...paint.activeColor, [face]: nextColor };
     updateObject(object.id, { uvPaint: next });
   }
 

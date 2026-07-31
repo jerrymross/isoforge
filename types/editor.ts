@@ -37,6 +37,7 @@ export type UvPaint = {
   top: string[];
   left: string[];
   right: string[];
+  activeColor?: Partial<Record<"top" | "left" | "right", string>>;
 };
 
 export type VectorObject = {

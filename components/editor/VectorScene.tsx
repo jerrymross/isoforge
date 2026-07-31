@@ -13,6 +13,8 @@ import { shade } from "@/features/tiled-export/exporters";
 function uvFaceColor(object: VectorObject, face: "top" | "left" | "right"): string {
   const cells = object.uvPaint?.[face];
   if (!cells?.length) return object.style.fill;
+  const activeColor = object.uvPaint?.activeColor?.[face];
+  if (activeColor) return activeColor;
   const counts = new Map<string, number>();
   cells.forEach((color) => counts.set(color, (counts.get(color) ?? 0) + 1));
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? object.style.fill;
