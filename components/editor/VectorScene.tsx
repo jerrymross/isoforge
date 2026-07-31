@@ -12,58 +12,46 @@ import { shade } from "@/features/tiled-export/exporters";
 
 function uvFaceColor(object: VectorObject, face: "top" | "left" | "right"): string {
   const cells = object.uvPaint?.[face];
-  if (!cells?.length) return object.style.fill;
-  const activeColor = object.uvPaint?.activeColor?.[face];
-  if (activeColor) return activeColor;
+  if (object.uvPaint?.mode !== "cells" || !cells?.length) return object.style.fill;
   const counts = new Map<string, number>();
   cells.forEach((color) => counts.set(color, (counts.get(color) ?? 0) + 1));
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? object.style.fill;
 }
 
-function paintPatternId(object: VectorObject, face: "top" | "left" | "right") {
-  return `uv-${object.id.replace(/[^a-zA-Z0-9_-]/g, "")}-${face}`;
-}
-
-function UvPattern({ object, face }: { object: VectorObject; face: "top" | "left" | "right" }) {
-  const cells = object.uvPaint?.[face];
-  const size = object.uvPaint?.size ?? 12;
-  if (!cells?.length) return null;
-  return (
-    <pattern
-      id={paintPatternId(object, face)}
-      patternUnits="objectBoundingBox"
-      patternContentUnits="userSpaceOnUse"
-      width="1"
-      height="1"
-      viewBox={`0 0 ${size} ${size}`}
-    >
-      <rect x="0" y="0" width={size} height={size} fill={object.style.fill} />
-      {object.uvPaint?.mode === "cells" && cells.map((color, index) => (
-        <rect
-          key={`${face}-${index}`}
-          x={index % size}
-          y={Math.floor(index / size)}
-          width="1"
-          height="1"
-          fill={color}
-        />
-      ))}
-    </pattern>
-  );
+function mapUvPoint(point: { x: number; y: number }, quad: { x: number; y: number }[]) {
+  if (quad.length !== 4) return point;
+  const [a, b, c, d] = quad;
+  const u = point.x;
+  const v = point.y;
+  return {
+    x: a.x * (1 - u) * (1 - v) + b.x * u * (1 - v) + c.x * u * v + d.x * (1 - u) * v,
+    y: a.y * (1 - u) * (1 - v) + b.y * u * (1 - v) + c.y * u * v + d.y * (1 - u) * v,
+  };
 }
 
 function uvVectorPath(points: { x: number; y: number }[], quad: { x: number; y: number }[]): string {
   if (quad.length !== 4) return "";
-  const [a, b, c, d] = quad;
   return points.map((point, index) => {
-    const u = point.x;
-    const v = point.y;
-    const mapped = {
-      x: a.x * (1 - u) * (1 - v) + b.x * u * (1 - v) + c.x * u * v + d.x * (1 - u) * v,
-      y: a.y * (1 - u) * (1 - v) + b.y * u * (1 - v) + c.y * u * v + d.y * (1 - u) * v,
-    };
+    const mapped = mapUvPoint(point, quad);
     return `${index ? "L" : "M"} ${mapped.x} ${mapped.y}`;
   }).join(" ");
+}
+
+function UvCellOverlay({ object, face, quad }: { object: VectorObject; face: "top" | "left" | "right"; quad: { x: number; y: number }[] }) {
+  const cells = object.uvPaint?.[face];
+  const size = object.uvPaint?.size ?? 12;
+  if (object.uvPaint?.mode !== "cells" || !cells?.length || quad.length !== 4) return null;
+  return cells.map((color, index) => {
+    const column = index % size;
+    const row = Math.floor(index / size);
+    const corners = [
+      mapUvPoint({ x: column / size, y: row / size }, quad),
+      mapUvPoint({ x: (column + 1) / size, y: row / size }, quad),
+      mapUvPoint({ x: (column + 1) / size, y: (row + 1) / size }, quad),
+      mapUvPoint({ x: column / size, y: (row + 1) / size }, quad),
+    ];
+    return <polygon key={`uv-cell-${face}-${index}`} points={pointsToString(corners)} fill={color} stroke="none" />;
+  });
 }
 
 function UvVectorOverlay({ object, face, quad }: { object: VectorObject; face: "top" | "left" | "right"; quad: { x: number; y: number }[] }) {
@@ -116,13 +104,6 @@ export function VectorShape({
       onPointerDown={onPointerDown}
       style={{ cursor: object.locked ? "not-allowed" : "grab" }}
     >
-      {object.uvPaint && (
-        <defs>
-          <UvPattern object={object} face="top" />
-          <UvPattern object={object} face="left" />
-          <UvPattern object={object} face="right" />
-        </defs>
-      )}
       {object.kind === "line" && object.points.length >= 2 ? (
         <line
           x1={object.points[0].x}
@@ -174,9 +155,10 @@ export function VectorShape({
               object.points[5],
               object.points[6],
             ])}
-            fill={object.uvPaint ? `url(#${paintPatternId(object, "left")})` : shade(object.style.fill, -18)}
+            fill={shade(object.style.fill, -18)}
             {...common}
           />
+          <UvCellOverlay object={object} face="left" quad={[object.points[3], object.points[2], object.points[5], object.points[6]]} />
           <UvVectorOverlay object={object} face="left" quad={[object.points[3], object.points[2], object.points[5], object.points[6]]} />
           <polygon
             points={pointsToString([
@@ -185,24 +167,27 @@ export function VectorShape({
               object.points[5],
               object.points[2],
             ])}
-            fill={object.uvPaint ? `url(#${paintPatternId(object, "right")})` : shade(object.style.fill, -32)}
+            fill={shade(object.style.fill, -32)}
             {...common}
           />
+          <UvCellOverlay object={object} face="right" quad={[object.points[1], object.points[4], object.points[5], object.points[2]]} />
           <UvVectorOverlay object={object} face="right" quad={[object.points[1], object.points[4], object.points[5], object.points[2]]} />
           <polygon
             points={pointsToString(object.points.slice(0, 4))}
-            fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : shade(object.style.fill, 12)}
+            fill={shade(object.style.fill, 12)}
             {...common}
           />
+          <UvCellOverlay object={object} face="top" quad={object.points.slice(0, 4)} />
           <UvVectorOverlay object={object} face="top" quad={object.points.slice(0, 4)} />
         </>
       ) : (
         <>
           <polygon
             points={pointsToString(object.points)}
-            fill={object.uvPaint ? `url(#${paintPatternId(object, "top")})` : uvFaceColor(object, "top")}
+            fill={uvFaceColor(object, "top")}
             {...common}
           />
+          {object.points.length === 4 && <UvCellOverlay object={object} face="top" quad={object.points} />}
           {object.points.length === 4 && <UvVectorOverlay object={object} face="top" quad={object.points} />}
         </>
       )}

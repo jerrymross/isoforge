@@ -1075,7 +1075,7 @@ button:disabled {
 .painter-workspace { display: grid; grid-template-columns: minmax(280px, 1fr) 220px; gap: 24px; align-items: start; padding-top: 22px; }
 .painter-canvas-label { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted, #72807b); font-size: 11px; }
 .painter-canvas-label strong { color: inherit; }
-.painter-grid { position: relative; display: grid; grid-template-columns: repeat(12, minmax(12px, 1fr)); width: min(100%, 560px); aspect-ratio: var(--painter-aspect, 1); border: 1px solid var(--line, #d9dfda); background: #e8ece8; gap: 1px; touch-action: none; }
+.painter-grid { position: relative; display: block; width: min(100%, 560px); aspect-ratio: var(--painter-aspect, 1); border: 1px solid var(--line, #d9dfda); background: transparent; touch-action: none; }
 .painter-grid.face-top { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 .painter-grid.face-left { clip-path: polygon(0 0, 50% 25%, 50% 100%, 0 75%); }
 .painter-grid.face-right { clip-path: polygon(50% 25%, 100% 0, 100% 75%, 50% 100%); }

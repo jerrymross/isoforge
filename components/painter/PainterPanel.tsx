@@ -146,9 +146,9 @@ export function PainterPanel() {
   }
 
   function paintAtPointer(event: React.PointerEvent<HTMLDivElement>) {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const column = Math.floor(((event.clientX - bounds.left) / bounds.width) * UV_SIZE);
-    const row = Math.floor(((event.clientY - bounds.top) / bounds.height) * UV_SIZE);
+    const point = uvPoint(event);
+    const column = Math.floor(point.x * UV_SIZE);
+    const row = Math.floor(point.y * UV_SIZE);
     if (column >= 0 && column < UV_SIZE && row >= 0 && row < UV_SIZE) {
       paintCell(row * UV_SIZE + column);
     }
@@ -248,6 +248,7 @@ export function PainterPanel() {
   }
 
   const activeFace = faces.find((item) => item.id === face)!;
+  const activeQuad = normalizedFacePoints(object, face);
   return (
     <section className="painter-panel" aria-label="Painter UV-redigering">
       <div className="panel-heading painter-heading">
@@ -275,15 +276,18 @@ export function PainterPanel() {
             onPointerUp={finishVector}
             onPointerCancel={finishVector}
           >
-            {paint[face].map((cell, index) => (
-              <button
-                key={`${face}-${index}`}
-                className="painter-cell"
-                style={{ backgroundColor: drawMode === "cells" ? cell : object.style.fill }}
-                aria-label={`${activeFace.label} cell ${index + 1}`}
-              />
-            ))}
             <svg className="painter-vector-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+              {paint[face].map((cell, index) => {
+                const column = index % UV_SIZE;
+                const row = Math.floor(index / UV_SIZE);
+                const corners = [
+                  mapUvToFace({ x: column / UV_SIZE, y: row / UV_SIZE }, activeQuad),
+                  mapUvToFace({ x: (column + 1) / UV_SIZE, y: row / UV_SIZE }, activeQuad),
+                  mapUvToFace({ x: (column + 1) / UV_SIZE, y: (row + 1) / UV_SIZE }, activeQuad),
+                  mapUvToFace({ x: column / UV_SIZE, y: (row + 1) / UV_SIZE }, activeQuad),
+                ];
+                return <polygon key={`${face}-${index}`} points={corners.map((point) => `${point.x},${point.y}`).join(" ")} fill={drawMode === "cells" ? cell : object.style.fill} stroke="rgba(255,255,255,.72)" strokeWidth="0.002" />;
+              })}
               {(paint.vectors?.[face] ?? []).map((path, index) => (
                 <path key={`saved-${index}`} d={painterPathData(path.points, object, face)} fill="none" stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" />
               ))}
