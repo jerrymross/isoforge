@@ -215,7 +215,8 @@ export function EditorShell() {
             }
           >
             <option value="floor">Golv</option>
-            <option value="wall">Vägg</option>
+            <option value="wall-left">Vägg vänster</option>
+            <option value="wall-right">Vägg höger</option>
             <option value="floor-object">Objekt på golv</option>
           </select>
         </label>

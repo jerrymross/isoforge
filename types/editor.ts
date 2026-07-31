@@ -16,7 +16,11 @@ export type Tool =
   | "iso-box";
 
 export type WorkspaceMode = "draw" | "convert" | "objects" | "collision";
-export type TileGuideMode = "floor" | "wall" | "floor-object";
+export type TileGuideMode =
+  | "floor"
+  | "wall-left"
+  | "wall-right"
+  | "floor-object";
 
 export type VectorKind = "line" | "polygon" | "iso-box" | "iso-cylinder";
 

@@ -79,11 +79,14 @@ describe("isometrisk geometri", () => {
   it("keeps guide modes on isometric angles", () => {
     const floor = tileGuidePolygon("floor", 128, 64, 336);
     const raised = tileGuidePolygon("floor-object", 128, 64, 336);
-    const wall = tileGuidePolygon("wall", 128, 64, 336);
+    const wallLeft = tileGuidePolygon("wall-left", 128, 64, 336);
+    const wallRight = tileGuidePolygon("wall-right", 128, 64, 336);
     expect(floor[2].y).toBe(336);
     expect(raised[2].y).toBe(272);
-    expect(wall[1].y - wall[0].y).toBe(64);
-    expect(wall[2].y - wall[3].y).toBe(64);
+    expect(wallLeft[1].x - wallLeft[0].x).toBe(64);
+    expect(wallLeft[1].y - wallLeft[0].y).toBe(32);
+    expect(wallRight[1].x - wallRight[0].x).toBe(64);
+    expect(wallRight[1].y - wallRight[0].y).toBe(-32);
   });
 
   it("låser linjer till en isometrisk vinkel", () => {

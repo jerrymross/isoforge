@@ -37,16 +37,25 @@ export function tileGuidePolygon(
   height: number,
   baseline = TILE_CENTER.y + height / 2,
 ): Point[] {
-  if (mode === "wall") {
-    const leftX = TILE_CENTER.x - width / 2;
-    const rightX = TILE_CENTER.x + width / 2;
+  if (mode === "wall-left" || mode === "wall-right") {
+    const isLeft = mode === "wall-left";
+    const leftX = isLeft ? TILE_CENTER.x - width / 2 : TILE_CENTER.x;
+    const rightX = isLeft ? TILE_CENTER.x : TILE_CENTER.x + width / 2;
+    const edgeRise = height / 2;
     const wallHeight = height * 2;
-    return [
-      { x: leftX, y: baseline - height - wallHeight },
-      { x: rightX, y: baseline - wallHeight },
-      { x: rightX, y: baseline },
-      { x: leftX, y: baseline - height },
-    ];
+    return isLeft
+      ? [
+          { x: leftX, y: baseline - edgeRise - wallHeight },
+          { x: rightX, y: baseline - wallHeight },
+          { x: rightX, y: baseline },
+          { x: leftX, y: baseline - edgeRise },
+        ]
+      : [
+          { x: leftX, y: baseline - wallHeight },
+          { x: rightX, y: baseline - edgeRise - wallHeight },
+          { x: rightX, y: baseline - edgeRise },
+          { x: leftX, y: baseline },
+        ];
   }
   const upwardOffset = mode === "floor-object" ? height : 0;
   return tileDiamond(width, height, {

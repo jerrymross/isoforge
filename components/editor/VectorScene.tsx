@@ -229,24 +229,28 @@ export function GuideLayer({
   const guideCenterY =
     guidePolygon.reduce((sum, point) => sum + point.y, 0) /
     guidePolygon.length;
+  const guideCenterX =
+    guidePolygon.reduce((sum, point) => sum + point.x, 0) /
+    guidePolygon.length;
   const guideOffsetY = guideCenterY - TILE_CENTER.y;
+  const guideOffsetX = guideCenterX - TILE_CENTER.x;
   return (
     <g className="guide-layer" pointerEvents="none">
       {showGuides && (
         <>
           <polygon points={pointsToString(guidePolygon)} className="tile-guide" />
           <line
-            x1={TILE_CENTER.x}
+            x1={guideCenterX}
             y1={(compact ? 250 : 100) + guideOffsetY}
-            x2={TILE_CENTER.x}
+            x2={guideCenterX}
             y2={(compact ? 360 : 410) + guideOffsetY}
             className="center-guide"
           />
           {!compact && (
             <>
-              <line x1={50} y1={439 + guideOffsetY} x2={590} y2={169 + guideOffsetY} className="iso-guide" />
-              <line x1={50} y1={169 + guideOffsetY} x2={590} y2={439 + guideOffsetY} className="iso-guide" />
-              <rect x="192" y={128 + guideOffsetY} width="256" height="256" className="export-guide" />
+              <line x1={50 + guideOffsetX} y1={439 + guideOffsetY} x2={590 + guideOffsetX} y2={169 + guideOffsetY} className="iso-guide" />
+              <line x1={50 + guideOffsetX} y1={169 + guideOffsetY} x2={590 + guideOffsetX} y2={439 + guideOffsetY} className="iso-guide" />
+              <rect x={192 + guideOffsetX} y={128 + guideOffsetY} width="256" height="256" className="export-guide" />
             </>
           )}
         </>

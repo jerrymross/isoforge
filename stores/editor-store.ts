@@ -34,6 +34,12 @@ import {
 const now = () => new Date().toISOString();
 const newId = () => crypto.randomUUID();
 
+function normalizeGuideMode(
+  mode: TileGuideMode | "wall" | undefined,
+): TileGuideMode {
+  return mode === "wall" ? "wall-left" : mode ?? "floor";
+}
+
 function defaultLayers(): Layer[] {
   return [
     { id: "shadow", name: "Skugga", visible: true, locked: false, opacity: 0.6 },
@@ -125,7 +131,9 @@ export function normalizeProject(project: Project): Project {
         ...tile,
         collectionId: tile.collectionId ?? legacy.collections![0].id,
         collisions: tile.collisions ?? [],
-        guideMode: tile.guideMode ?? "floor",
+        guideMode: normalizeGuideMode(
+          tile.guideMode as TileGuideMode | "wall" | undefined,
+        ),
       })),
     };
   }
@@ -138,7 +146,9 @@ export function normalizeProject(project: Project): Project {
         ...tile,
         collectionId: "collection-bakery",
         collisions: tile.collisions ?? [],
-        guideMode: tile.guideMode ?? "floor",
+        guideMode: normalizeGuideMode(
+          tile.guideMode as TileGuideMode | "wall" | undefined,
+        ),
       })),
       ...fallback.tiles.filter((tile) => !existingIds.has(tile.id)),
     ],
@@ -919,7 +929,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           points: collision.points.map((point) => ({ ...point })),
         })),
         anchor: tile.anchor ?? defaultAnchor(),
-        guideMode: tile.guideMode ?? "floor",
+        guideMode: normalizeGuideMode(
+          tile.guideMode as TileGuideMode | "wall" | undefined,
+        ),
       }));
       if (!imported.length) return state;
       return {
