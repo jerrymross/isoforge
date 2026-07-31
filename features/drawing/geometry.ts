@@ -64,6 +64,53 @@ export function tileGuidePolygon(
   });
 }
 
+export function tileGuideFaces(
+  mode: TileGuideMode,
+  width: number,
+  height: number,
+  baseline = TILE_CENTER.y + height / 2,
+): Point[][] {
+  const primary = tileGuidePolygon(mode, width, height, baseline);
+
+  if (mode === "floor") {
+    return [primary];
+  }
+
+  if (mode === "floor-object") {
+    const lower = tileDiamond(width, height, {
+      x: TILE_CENTER.x,
+      y: baseline - height / 2,
+    });
+    return [
+      primary,
+      [primary[0], primary[1], lower[1], lower[0]],
+      [primary[1], primary[2], lower[2], lower[1]],
+      [primary[2], primary[3], lower[3], lower[2]],
+      [primary[3], primary[0], lower[0], lower[3]],
+    ];
+  }
+
+  const isLeft = mode === "wall-left";
+  // A complete tile is one full diagonal deep. Walls use half of that depth.
+  const thickness = {
+    x: (isLeft ? width : -width) / 4,
+    y: -height / 4,
+  };
+  const back = primary.map((point) => ({
+    x: point.x + thickness.x,
+    y: point.y + thickness.y,
+  }));
+
+  return [
+    primary,
+    back,
+    [primary[0], primary[1], back[1], back[0]],
+    [primary[1], primary[2], back[2], back[1]],
+    [primary[2], primary[3], back[3], back[2]],
+    [primary[3], primary[0], back[0], back[3]],
+  ];
+}
+
 export function pointsToString(points: Point[]): string {
   return points.map((point) => `${point.x},${point.y}`).join(" ");
 }

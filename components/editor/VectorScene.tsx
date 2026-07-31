@@ -5,7 +5,7 @@ import { collisionBounds } from "@/features/collision/collision";
 import {
   objectTransform,
   pointsToString,
-  tileGuidePolygon,
+  tileGuideFaces,
   TILE_CENTER,
 } from "@/features/drawing/geometry";
 import { shade } from "@/features/tiled-export/exporters";
@@ -220,25 +220,34 @@ export function GuideLayer({
   showGuides = true,
   showAnchors = true,
 }: GuideLayerProps) {
-  const guidePolygon = tileGuidePolygon(
+  const guideFaces = tileGuideFaces(
     tile.guideMode ?? "floor",
     tileWidth,
     tileHeight,
     tile.anchor.baseline,
   );
+  const guidePoints = guideFaces.flat();
   const guideCenterY =
-    guidePolygon.reduce((sum, point) => sum + point.y, 0) /
-    guidePolygon.length;
+    guidePoints.reduce((sum, point) => sum + point.y, 0) /
+    guidePoints.length;
   const guideCenterX =
-    guidePolygon.reduce((sum, point) => sum + point.x, 0) /
-    guidePolygon.length;
+    guidePoints.reduce((sum, point) => sum + point.x, 0) /
+    guidePoints.length;
   const guideOffsetY = guideCenterY - TILE_CENTER.y;
   const guideOffsetX = guideCenterX - TILE_CENTER.x;
   return (
     <g className="guide-layer" pointerEvents="none">
       {showGuides && (
         <>
-          <polygon points={pointsToString(guidePolygon)} className="tile-guide" />
+          <g className="tile-guide-volume">
+            {guideFaces.map((face, index) => (
+              <polygon
+                key={`${tile.guideMode ?? "floor"}-${index}`}
+                points={pointsToString(face)}
+                className="tile-guide"
+              />
+            ))}
+          </g>
           <line
             x1={guideCenterX}
             y1={(compact ? 250 : 100) + guideOffsetY}

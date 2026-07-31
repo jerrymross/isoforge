@@ -22,6 +22,7 @@ import {
   scaleObjectFromPivot,
   tileDiamond,
   tileGuidePolygon,
+  tileGuideFaces,
   TILED_ISOMETRIC_TILT,
 } from "./geometry";
 import type { Project } from "@/types/editor";
@@ -87,6 +88,20 @@ describe("isometrisk geometri", () => {
     expect(wallLeft[1].y - wallLeft[0].y).toBe(32);
     expect(wallRight[1].x - wallRight[0].x).toBe(64);
     expect(wallRight[1].y - wallRight[0].y).toBe(-32);
+  });
+
+  it("shows every face of a raised block and half-depth walls", () => {
+    const blockFaces = tileGuideFaces("floor-object", 128, 64, 336);
+    const wallLeftFaces = tileGuideFaces("wall-left", 128, 64, 336);
+    const wallRightFaces = tileGuideFaces("wall-right", 128, 64, 336);
+
+    expect(blockFaces).toHaveLength(5);
+    expect(wallLeftFaces).toHaveLength(6);
+    expect(wallRightFaces).toHaveLength(6);
+    expect(wallLeftFaces[1][0].x - wallLeftFaces[0][0].x).toBe(32);
+    expect(wallLeftFaces[1][0].y - wallLeftFaces[0][0].y).toBe(-16);
+    expect(wallRightFaces[1][0].x - wallRightFaces[0][0].x).toBe(-32);
+    expect(wallRightFaces[1][0].y - wallRightFaces[0][0].y).toBe(-16);
   });
 
   it("låser linjer till en isometrisk vinkel", () => {
