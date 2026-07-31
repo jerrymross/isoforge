@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { ArrowDown, ArrowUp, Brush, ChevronLeft, Columns3, Eraser, Eye, EyeOff, Layers3, Paintbrush, PenLine, Square, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Brush, ChevronLeft, Circle, Columns3, Eraser, Eye, EyeOff, Layers3, MousePointer2, Paintbrush, PenLine, RectangleHorizontal, Square, Trash2, Waypoints } from "lucide-react";
 import type { Point, UvPaint, UvVectorPath, VectorObject } from "@/types/editor";
 import { useEditorStore } from "@/stores/editor-store";
 
@@ -144,12 +144,19 @@ export function PainterPanel() {
   const [gradientEnabled, setGradientEnabled] = useState(false);
   const [shadowEnabled, setShadowEnabled] = useState(false);
   const [bevelEnabled, setBevelEnabled] = useState(false);
-  const [vectorTool, setVectorTool] = useState<"freehand" | "pen">("freehand");
+  const [vectorTool, setVectorTool] = useState<"select" | "node" | "freehand" | "pen" | "rectangle" | "ellipse">("select");
+  const [keepVectorProportions, setKeepVectorProportions] = useState(false);
   const [selectedVectorId, setSelectedVectorId] = useState<string | null>(null);
   const [drawMode, setDrawMode] = useState<"vector" | "cells">(() => object?.uvPaint?.mode ?? "vector");
   const [draftPath, setDraftPath] = useState<Point[]>([]);
   const painting = useRef(false);
   const draftRef = useRef<Point[]>([]);
+  const shapeStartRef = useRef<Point | null>(null);
+  const editDragRef = useRef<
+    | { kind: "node"; id: string; index: number }
+    | { kind: "scale"; id: string; handle: number; points: Point[]; bounds: { minX: number; minY: number; maxX: number; maxY: number } }
+    | null
+  >(null);
   const paintRef = useRef<{ objectId: string; paint: UvPaint } | null>(null);
   const paint = object ? makePaint(object) : null;
 
@@ -259,8 +266,17 @@ export function PainterPanel() {
   }
 
   function finishPointerVector() {
-    if (vectorTool === "freehand") commitVector(false);
-    else painting.current = false;
+    if (editDragRef.current) {
+      editDragRef.current = null;
+      painting.current = false;
+    } else if (vectorTool === "freehand") {
+      commitVector(false);
+    } else if (vectorTool === "rectangle" || vectorTool === "ellipse") {
+      commitVector(true);
+      shapeStartRef.current = null;
+    } else {
+      painting.current = false;
+    }
   }
 
   function toggleVectorVisibility(id: string) {
@@ -313,11 +329,89 @@ export function PainterPanel() {
     }));
   }
 
+  function rectanglePoints(start: Point, end: Point): Point[] {
+    return [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }];
+  }
+
+  function ellipsePoints(start: Point, end: Point): Point[] {
+    const center = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    const radiusX = Math.abs(end.x - start.x) / 2;
+    const radiusY = Math.abs(end.y - start.y) / 2;
+    return Array.from({ length: 32 }, (_, index) => {
+      const angle = (index / 32) * Math.PI * 2;
+      return { x: center.x + Math.cos(angle) * radiusX, y: center.y + Math.sin(angle) * radiusY };
+    });
+  }
+
+  function updateEditDrag(point: Point) {
+    const drag = editDragRef.current;
+    if (!drag) return;
+    const vectors = [...(paintRef.current?.paint.vectors?.[face] ?? paint?.vectors?.[face] ?? [])];
+    const vectorIndex = vectors.findIndex((vector, index) => (vector.id ?? `legacy-${index}`) === drag.id);
+    if (vectorIndex < 0) return;
+    const vector = vectors[vectorIndex];
+    if (drag.kind === "node") {
+      const points = [...vector.points];
+      points[drag.index] = point;
+      vectors[vectorIndex] = { ...vector, points };
+    } else {
+      const { minX, minY, maxX, maxY } = drag.bounds;
+      const handles = [
+        { x: minX, y: minY }, { x: maxX, y: minY },
+        { x: maxX, y: maxY }, { x: minX, y: maxY },
+      ];
+      const sourceHandle = handles[drag.handle];
+      const pivot = handles[(drag.handle + 2) % 4];
+      const denominatorX = sourceHandle.x - pivot.x;
+      const denominatorY = sourceHandle.y - pivot.y;
+      let scaleX = (point.x - pivot.x) / (Math.abs(denominatorX) < 0.0001 ? 0.0001 : denominatorX);
+      let scaleY = (point.y - pivot.y) / (Math.abs(denominatorY) < 0.0001 ? 0.0001 : denominatorY);
+      if (keepVectorProportions) {
+        const uniform = Math.abs(scaleX) > Math.abs(scaleY) ? scaleX : scaleY;
+        scaleX = uniform;
+        scaleY = uniform;
+      }
+      vectors[vectorIndex] = {
+        ...vector,
+        points: drag.points.map((source) => ({
+          x: pivot.x + (source.x - pivot.x) * scaleX,
+          y: pivot.y + (source.y - pivot.y) * scaleY,
+        })),
+      };
+    }
+    saveVectors(vectors);
+  }
+
+  function handleScalePointerDown(event: React.PointerEvent<SVGRectElement>) {
+    if (!selectedVectorId) return;
+    const vectors = paintRef.current?.paint.vectors?.[face] ?? paint?.vectors?.[face] ?? [];
+    const vector = vectors.find((item, index) => (item.id ?? `legacy-${index}`) === selectedVectorId);
+    if (!vector) return;
+    const bounds = {
+      minX: Math.min(...vector.points.map((point) => point.x)),
+      minY: Math.min(...vector.points.map((point) => point.y)),
+      maxX: Math.max(...vector.points.map((point) => point.x)),
+      maxY: Math.max(...vector.points.map((point) => point.y)),
+    };
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    editDragRef.current = {
+      kind: "scale",
+      id: selectedVectorId,
+      handle: Number(event.currentTarget.dataset.handle),
+      points: vector.points.map((source) => ({ ...source })),
+      bounds,
+    };
+  }
+
   function pointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
     painting.current = true;
     if (drawMode === "vector") {
-      if (vectorTool === "pen") {
+      if (vectorTool === "select" || vectorTool === "node") {
+        setSelectedVectorId(null);
+        painting.current = false;
+      } else if (vectorTool === "pen") {
         const point = uvPoint(event);
         const first = draftRef.current[0];
         if (first && draftRef.current.length >= 3 && Math.hypot(point.x - first.x, point.y - first.y) < 0.04) {
@@ -325,6 +419,11 @@ export function PainterPanel() {
           return;
         }
         draftRef.current = [...draftRef.current, point];
+        setDraftPath(draftRef.current);
+      } else if (vectorTool === "rectangle" || vectorTool === "ellipse") {
+        const point = uvPoint(event);
+        shapeStartRef.current = point;
+        draftRef.current = vectorTool === "rectangle" ? rectanglePoints(point, point) : ellipsePoints(point, point);
         setDraftPath(draftRef.current);
       } else {
         draftRef.current = [];
@@ -337,9 +436,17 @@ export function PainterPanel() {
   }
 
   function pointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (editDragRef.current) {
+      updateEditDrag(uvPoint(event));
+      return;
+    }
     if (!painting.current) return;
     if (drawMode === "vector" && vectorTool === "freehand") drawVector(event);
-    else paintAtPointer(event);
+    else if (drawMode === "vector" && shapeStartRef.current && (vectorTool === "rectangle" || vectorTool === "ellipse")) {
+      const end = uvPoint(event);
+      draftRef.current = vectorTool === "rectangle" ? rectanglePoints(shapeStartRef.current, end) : ellipsePoints(shapeStartRef.current, end);
+      setDraftPath(draftRef.current);
+    } else if (drawMode === "cells") paintAtPointer(event);
   }
 
   function changeDrawMode(nextMode: "vector" | "cells") {
@@ -349,6 +456,14 @@ export function PainterPanel() {
     const next: UvPaint = { ...current, mode: nextMode };
     paintRef.current = { objectId: object.id, paint: next };
     updateObject(object.id, { uvPaint: next });
+  }
+
+  function chooseVectorTool(tool: typeof vectorTool) {
+    if (drawMode !== "vector") changeDrawMode("vector");
+    setVectorTool(tool);
+    draftRef.current = [];
+    shapeStartRef.current = null;
+    setDraftPath([]);
   }
 
   if (!object || !paint) {
@@ -364,6 +479,22 @@ export function PainterPanel() {
   const activeFace = faces.find((item) => item.id === face)!;
   const activeQuad = normalizedFacePoints(object, face);
   const faceVectors = paint.vectors?.[face] ?? [];
+  const selectedVectorIndex = faceVectors.findIndex((vector, index) => (vector.id ?? `legacy-${index}`) === selectedVectorId);
+  const selectedVector = selectedVectorIndex >= 0 ? faceVectors[selectedVectorIndex] : null;
+  const selectedVectorBounds = selectedVector ? {
+    minX: Math.min(...selectedVector.points.map((point) => point.x)),
+    minY: Math.min(...selectedVector.points.map((point) => point.y)),
+    maxX: Math.max(...selectedVector.points.map((point) => point.x)),
+    maxY: Math.max(...selectedVector.points.map((point) => point.y)),
+  } : null;
+  const painterTools = [
+    { id: "select" as const, label: "Markering", icon: MousePointer2 },
+    { id: "node" as const, label: "Noder", icon: Waypoints },
+    { id: "pen" as const, label: "Ritstift", icon: PenLine },
+    { id: "freehand" as const, label: "Frihand", icon: Brush },
+    { id: "rectangle" as const, label: "Rektangel", icon: RectangleHorizontal },
+    { id: "ellipse" as const, label: "Ellips", icon: Circle },
+  ];
   return (
     <section className="painter-panel" aria-label="Painter UV-redigering">
       <div className="panel-heading painter-heading">
@@ -380,10 +511,6 @@ export function PainterPanel() {
       </div>
       {drawMode === "vector" && (
         <div className="painter-stylebar">
-          <div className="painter-tool-group">
-            <button className={vectorTool === "freehand" ? "active" : ""} onClick={() => { setVectorTool("freehand"); draftRef.current = []; setDraftPath([]); }}><Brush size={13} /> Frihand</button>
-            <button className={vectorTool === "pen" ? "active" : ""} onClick={() => { setVectorTool("pen"); draftRef.current = []; setDraftPath([]); }}><PenLine size={13} /> Ritstift</button>
-          </div>
           <label>Linje <input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
           <label className="compact-range">Tjocklek <input type="range" min="0.004" max="0.06" step="0.002" value={strokeWidth} onChange={(event) => setStrokeWidth(Number(event.target.value))} /><b>{Math.round(strokeWidth * 1000)}</b></label>
           <label className="toggle-chip"><input type="checkbox" checked={fillEnabled} onChange={(event) => setFillEnabled(event.target.checked)} /> Fyllning</label>
@@ -421,7 +548,16 @@ export function PainterPanel() {
         })}
       </div>
       <div className="painter-workspace">
-        <div className="painter-canvas-wrap">
+        <div className="painter-design-area">
+          <aside className="painter-tool-rail" aria-label="Vektorverktyg">
+            {painterTools.map((tool) => {
+              const Icon = tool.icon;
+              return <button key={tool.id} className={vectorTool === tool.id && drawMode === "vector" ? "active" : ""} onClick={() => chooseVectorTool(tool.id)} title={tool.label}><Icon size={17} /><span>{tool.label}</span></button>;
+            })}
+            <span className="rail-divider" />
+            <label className="rail-proportion" title="Behåll proportioner vid skalning"><input type="checkbox" checked={keepVectorProportions} onChange={(event) => setKeepVectorProportions(event.target.checked)} /><Square size={14} /><span>Proportion</span></label>
+          </aside>
+          <div className="painter-canvas-wrap">
           <div className="painter-canvas-label"><strong>{activeFace.label}</strong><span>{activeFace.description} · {UV_SIZE} × {UV_SIZE}</span></div>
           <div
             className={`painter-grid face-${face}`}
@@ -431,10 +567,10 @@ export function PainterPanel() {
             onPointerUp={finishPointerVector}
             onPointerCancel={finishPointerVector}
           >
-            <svg className="painter-vector-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+            <svg className={`painter-vector-layer ${vectorTool === "select" || vectorTool === "node" ? "is-editing" : ""}`} viewBox="0 0 1 1" preserveAspectRatio="none">
               <defs>
                 {(paint.vectors?.[face] ?? []).map((path, index) => path.gradient && (
-                  <linearGradient key={`gradient-${index}`} id={`painter-gradient-${object.id}-${face}-${path.id ?? index}`} x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform={`rotate(${path.gradient.angle} .5 .5)`}>
+                  <linearGradient key={`gradient-${index}`} id={`painter-gradient-${object.id}-${face}-${path.id ?? `legacy-${index}`}`} x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform={`rotate(${path.gradient.angle} .5 .5)`}>
                     <stop offset="0" stopColor={path.gradient.from} />
                     <stop offset="1" stopColor={path.gradient.to} />
                   </linearGradient>
@@ -449,7 +585,7 @@ export function PainterPanel() {
                   mapUvToFace({ x: (column + 1) / UV_SIZE, y: (row + 1) / UV_SIZE }, activeQuad),
                   mapUvToFace({ x: column / UV_SIZE, y: (row + 1) / UV_SIZE }, activeQuad),
                 ];
-                return <polygon key={`${face}-${index}`} points={corners.map((point) => `${point.x},${point.y}`).join(" ")} fill={drawMode === "cells" ? cell : object.style.fill} stroke="none" />;
+                return <polygon className="painter-uv-cell" key={`${face}-${index}`} points={corners.map((point) => `${point.x},${point.y}`).join(" ")} fill={drawMode === "cells" ? cell : object.style.fill} stroke="none" />;
               })}
               {Array.from({ length: UV_SIZE + 1 }, (_, index) => index / UV_SIZE).map((position) => (
                 <g key={`guide-${position}`} className="painter-uv-guides">
@@ -459,14 +595,14 @@ export function PainterPanel() {
               ))}
               {(paint.vectors?.[face] ?? []).map((path, index) => {
                 if (path.visible === false) return null;
-                const id = path.id ?? index;
+                const id = path.id ?? `legacy-${index}`;
                 const data = `${painterPathData(path.points, object, face)}${path.closed ? " Z" : ""}`;
                 const fill = path.closed ? path.gradient ? `url(#painter-gradient-${object.id}-${face}-${id})` : path.fill ?? "none" : "none";
                 return (
                   <g key={`saved-${id}`}>
-                    {path.effects?.shadow && <path d={data} fill={path.closed ? "rgba(0,0,0,.22)" : "none"} stroke="rgba(0,0,0,.28)" strokeWidth={path.width} transform="translate(.012 .014)" />}
-                    {path.effects?.bevel && <path d={data} fill="none" stroke="rgba(255,255,255,.62)" strokeWidth={path.width * 1.65} transform="translate(-.004 -.004)" />}
-                    <path d={data} fill={fill} stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" />
+                    {path.effects?.shadow && <path pointerEvents="none" d={data} fill={path.closed ? "rgba(0,0,0,.22)" : "none"} stroke="rgba(0,0,0,.28)" strokeWidth={path.width} transform="translate(.012 .014)" />}
+                    {path.effects?.bevel && <path pointerEvents="none" d={data} fill="none" stroke="rgba(255,255,255,.62)" strokeWidth={path.width * 1.65} transform="translate(-.004 -.004)" />}
+                    <path className="painter-drawn-shape" d={data} fill={fill} stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" pointerEvents={vectorTool === "select" || vectorTool === "node" ? "visiblePainted" : "none"} onPointerDown={(event) => { event.stopPropagation(); selectVectorLayer(path, id); }} />
                   </g>
                 );
               })}
@@ -475,9 +611,27 @@ export function PainterPanel() {
                 const mapped = mapUvToFace(point, activeQuad);
                 return <circle key={`pen-node-${index}`} cx={mapped.x} cy={mapped.y} r={index === 0 ? 0.012 : 0.009} fill="#fffaf0" stroke={color} strokeWidth="0.004" />;
               })}
+              {selectedVector && selectedVectorBounds && vectorTool === "node" && selectedVector.points.map((point, index) => {
+                const mapped = mapUvToFace(point, activeQuad);
+                return <circle key={`edit-node-${index}`} className="painter-edit-node" cx={mapped.x} cy={mapped.y} r="0.011" onPointerDown={(event) => { event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); editDragRef.current = { kind: "node", id: selectedVectorId!, index }; }} />;
+              })}
+              {selectedVector && selectedVectorBounds && vectorTool === "select" && (() => {
+                const corners = [
+                  { x: selectedVectorBounds.minX, y: selectedVectorBounds.minY },
+                  { x: selectedVectorBounds.maxX, y: selectedVectorBounds.minY },
+                  { x: selectedVectorBounds.maxX, y: selectedVectorBounds.maxY },
+                  { x: selectedVectorBounds.minX, y: selectedVectorBounds.maxY },
+                ];
+                const mappedCorners = corners.map((point) => mapUvToFace(point, activeQuad));
+                return <g className="painter-selection-box">
+                  <polygon points={mappedCorners.map((point) => `${point.x},${point.y}`).join(" ")} />
+                  {mappedCorners.map((point, index) => <rect key={`scale-${index}`} data-handle={index} x={point.x - 0.012} y={point.y - 0.012} width="0.024" height="0.024" onPointerDown={handleScalePointerDown} />)}
+                </g>;
+              })()}
             </svg>
           </div>
-          <small className="painter-hint">{drawMode === "vector" ? "Dra i kvadraten för att rita en vektorlinje." : "Klicka eller dra över rutorna för att måla."}</small>
+          <small className="painter-hint">{drawMode === "cells" ? "Klicka eller dra över rutorna för att måla." : vectorTool === "select" ? "Klicka på en form och dra i hörnhandtagen för att skala." : vectorTool === "node" ? "Markera en form och dra dess noder för att ändra formen." : vectorTool === "pen" ? "Klicka punkt för punkt. Klicka på startpunkten för att sluta formen." : vectorTool === "rectangle" || vectorTool === "ellipse" ? "Dra ut formen över UV-ytan." : "Dra över ytan för att rita på fri hand."}</small>
+          </div>
         </div>
         <div className="painter-preview-card">
           <span>UV-layout</span>

@@ -1091,6 +1091,15 @@ button:disabled {
 .painter-face-tabs .face-preview-button polygon { fill: rgba(229, 163, 83, .38); stroke: #8a6a44; stroke-width: .012; }
 .painter-face-tabs .face-preview-button.active { border-color: #ee6a47; border-bottom-color: #ee6a47; background: #fff8f4; }
 .painter-workspace { display: grid; grid-template-columns: minmax(280px, 1fr) 220px; gap: 24px; align-items: start; padding-top: 22px; }
+.painter-design-area { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 14px; align-items: start; }
+.painter-tool-rail { display: grid; gap: 5px; padding: 6px; border: 1px solid var(--line, #d9dfda); border-radius: 8px; background: var(--surface, #fff); }
+.painter-tool-rail button { display: grid; place-items: center; gap: 2px; min-height: 45px; padding: 5px 2px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--muted, #72807b); cursor: pointer; }
+.painter-tool-rail button span, .painter-tool-rail label span { font-size: 8px; }
+.painter-tool-rail button:hover { background: rgba(106,137,130,.08); }
+.painter-tool-rail button.active { border-color: #e68a71; background: #fff3ee; color: #c94f35; }
+.painter-tool-rail .rail-divider { height: 1px; background: var(--line, #d9dfda); }
+.rail-proportion { display: grid; place-items: center; gap: 3px; padding: 5px 0; color: var(--muted, #72807b); cursor: pointer; }
+.rail-proportion input { width: 13px; height: 13px; }
 .painter-canvas-label { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted, #72807b); font-size: 11px; }
 .painter-canvas-label strong { color: inherit; }
 .painter-grid { position: relative; display: block; width: min(100%, 560px); aspect-ratio: var(--painter-aspect, 1); border: 1px solid var(--line, #d9dfda); background: transparent; touch-action: none; }
@@ -1098,6 +1107,12 @@ button:disabled {
 .painter-grid.face-left { clip-path: polygon(0 0, 50% 25%, 50% 100%, 0 75%); }
 .painter-grid.face-right { clip-path: polygon(50% 25%, 100% 0, 100% 75%, 50% 100%); }
 .painter-vector-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.painter-vector-layer.is-editing { pointer-events: auto; }
+.painter-vector-layer.is-editing .painter-uv-cell, .painter-vector-layer.is-editing .painter-uv-guides { pointer-events: none; }
+.painter-drawn-shape { cursor: pointer; }
+.painter-edit-node { fill: #fffaf0; stroke: #ed6847; stroke-width: .004; cursor: move; pointer-events: all; }
+.painter-selection-box polygon { fill: none; stroke: #167fca; stroke-width: .004; stroke-dasharray: .012 .008; pointer-events: none; }
+.painter-selection-box rect { fill: #fff; stroke: #167fca; stroke-width: .004; cursor: nwse-resize; pointer-events: all; }
 .painter-uv-guides path { fill: none; stroke: rgba(255,255,255,.76); stroke-width: .0022; }
 .painter-cell { min-width: 0; min-height: 0; padding: 0; border: 0; cursor: crosshair; box-shadow: inset 0 0 0 1px rgba(20, 45, 40, .08); }
 .painter-cell:hover { filter: brightness(1.14); }
@@ -1120,6 +1135,8 @@ button:disabled {
 html[data-theme="dark"] .painter-panel { background: #18221f; }
 html[data-theme="dark"] .painter-heading button, html[data-theme="dark"] .empty-painter button, html[data-theme="dark"] .painter-tool, html[data-theme="dark"] .painter-preview-card { border-color: #384743; background: #1d2825; }
 html[data-theme="dark"] .painter-tool.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }
+html[data-theme="dark"] .painter-tool-rail { border-color: #384743; background: #1d2825; }
+html[data-theme="dark"] .painter-tool-rail button.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }
 html[data-theme="dark"] .painter-stylebar, html[data-theme="dark"] .painter-stylebar button, html[data-theme="dark"] .painter-stylebar .toggle-chip { border-color: #384743; background: #1d2825; }
 html[data-theme="dark"] .painter-layer-row.active { border-color: #b65b43; background: #35241f; }
 html[data-theme="dark"] .painter-object-tabs, html[data-theme="dark"] .painter-object-tabs button, html[data-theme="dark"] .painter-face-tabs .face-preview-button { border-color: #384743; }
