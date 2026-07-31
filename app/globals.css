@@ -1132,6 +1132,43 @@ button:disabled {
 .uv-top { grid-column: 1 / 3; }
 .empty-painter { display: grid; align-content: center; justify-items: start; gap: 12px; }
 .empty-painter p { max-width: 380px; color: var(--muted, #72807b); font-size: 13px; line-height: 1.5; }
+
+.world-editor { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-width: 0; height: 100%; overflow: hidden; background: #f7f8f5; }
+.world-palette { display: grid; grid-template-rows: auto auto auto auto minmax(0, 1fr) auto; gap: 12px; padding: 14px; overflow: hidden; border-right: 1px solid var(--line, #d9dfda); background: #fbfcfa; }
+.world-title { display: flex; align-items: center; gap: 9px; }
+.world-title div { display: grid; }
+.world-title strong { font-size: 13px; }
+.world-title small { color: var(--muted, #72807b); font-size: 9px; }
+.world-size-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.world-size-fields label, .world-collection { display: grid; gap: 4px; color: var(--muted, #72807b); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+.world-size-fields input, .world-collection select { min-width: 0; height: 30px; border: 1px solid var(--line, #d9dfda); border-radius: 5px; padding: 0 7px; background: #fff; color: inherit; }
+.world-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.world-tools button, .world-clear { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 30px; border: 1px solid var(--line, #d9dfda); border-radius: 5px; background: #fff; color: inherit; font-size: 10px; cursor: pointer; }
+.world-tools button.active { border-color: #e36b4b; background: #fff3ee; color: #c94f35; }
+.world-tile-palette { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: 7px; overflow-y: auto; padding-right: 2px; }
+.world-tile-palette > button { display: grid; grid-template-rows: 65px auto; min-width: 0; overflow: hidden; border: 1px solid var(--line, #d9dfda); border-radius: 6px; padding: 4px; background: #fff; color: inherit; cursor: pointer; }
+.world-tile-palette > button.active { border-color: #e36b4b; box-shadow: inset 0 0 0 1px #e36b4b; }
+.world-tile-palette svg { width: 100%; height: 65px; background: #f4f6f2; }
+.world-tile-palette span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px 2px 1px; font-size: 9px; }
+.world-tile-palette p { grid-column: 1 / -1; color: var(--muted, #72807b); font-size: 10px; line-height: 1.4; }
+.world-clear { color: #b34f3b; }
+.world-stage-shell { display: grid; grid-template-rows: 48px minmax(0, 1fr); min-width: 0; overflow: hidden; }
+.world-stage-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 13px; border-bottom: 1px solid var(--line, #d9dfda); background: #fbfcfa; }
+.world-stage-heading > div:first-child { display: flex; align-items: baseline; gap: 8px; }
+.world-stage-heading strong { font-size: 12px; }
+.world-stage-heading span { color: var(--muted, #72807b); font-size: 10px; }
+.world-zoom { display: flex; align-items: center; overflow: hidden; border: 1px solid var(--line, #d9dfda); border-radius: 5px; }
+.world-zoom button { display: grid; place-items: center; width: 28px; height: 27px; border: 0; background: #fff; cursor: pointer; }
+.world-zoom b { min-width: 48px; text-align: center; font-size: 9px; }
+.world-stage { overflow: auto; background-color: #edf1ed; background-image: radial-gradient(#cdd6d1 1px, transparent 1px); background-size: 16px 16px; }
+.world-stage > svg { display: block; min-width: 100%; min-height: 100%; }
+.world-grid-base polygon { fill: rgba(255,255,255,.48); stroke: #9fb2aa; stroke-width: .7; }
+.world-hit-grid polygon { fill: transparent; stroke: transparent; stroke-width: 2; cursor: crosshair; }
+.world-hit-grid polygon:hover { fill: rgba(238,106,71,.14); stroke: #e46a49; }
+html[data-theme="dark"] .world-editor, html[data-theme="dark"] .world-stage { background-color: #16211e; }
+html[data-theme="dark"] .world-palette, html[data-theme="dark"] .world-stage-heading { border-color: #384743; background: #1b2623; }
+html[data-theme="dark"] .world-size-fields input, html[data-theme="dark"] .world-collection select, html[data-theme="dark"] .world-tools button, html[data-theme="dark"] .world-clear, html[data-theme="dark"] .world-tile-palette > button, html[data-theme="dark"] .world-zoom button { border-color: #384743; background: #1d2825; color: #c3cfcb; }
+html[data-theme="dark"] .world-grid-base polygon { fill: rgba(40,58,53,.48); stroke: #526f68; }
 html[data-theme="dark"] .painter-panel { background: #18221f; }
 html[data-theme="dark"] .painter-heading button, html[data-theme="dark"] .empty-painter button, html[data-theme="dark"] .painter-tool, html[data-theme="dark"] .painter-preview-card { border-color: #384743; background: #1d2825; }
 html[data-theme="dark"] .painter-tool.active { border-color: #b65b43; background: #35241f; color: #f38a6d; }

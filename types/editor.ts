@@ -15,7 +15,7 @@ export type Tool =
   | "polygon"
   | "iso-box";
 
-export type WorkspaceMode = "draw" | "convert" | "objects" | "collision" | "painter";
+export type WorkspaceMode = "draw" | "convert" | "objects" | "collision" | "painter" | "world";
 export type TileGuideMode =
   | "floor"
   | "wall-left"
@@ -126,6 +126,12 @@ export type TileCollection = {
   name: string;
 };
 
+export type WorldMap = {
+  width: number;
+  height: number;
+  cells: Record<string, string>;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -138,6 +144,7 @@ export type Project = {
   collections: TileCollection[];
   tiles: Tile[];
   activeTileId: string;
+  world: WorldMap;
   updatedAt: string;
 };
 

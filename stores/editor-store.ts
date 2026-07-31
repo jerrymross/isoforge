@@ -92,6 +92,7 @@ export function createDefaultProject(): Project {
     collections: [{ id: "collection-my-tiles", name: "Mina tiles" }],
     tiles: [createEmptyTile()],
     activeTileId: "tile-start",
+    world: { width: 12, height: 12, cells: {} },
     updatedAt: now(),
   };
 }
@@ -127,6 +128,7 @@ export function normalizeProject(project: Project): Project {
   if (legacy.collections?.length) {
     return {
       ...project,
+      world: project.world ?? fallback.world,
       tiles: legacy.tiles.map((tile) => ({
         ...tile,
         collectionId: tile.collectionId ?? legacy.collections![0].id,
@@ -140,6 +142,7 @@ export function normalizeProject(project: Project): Project {
   const existingIds = new Set(legacy.tiles.map((tile) => tile.id));
   return {
     ...project,
+    world: project.world ?? fallback.world,
     collections: fallback.collections,
     tiles: [
       ...legacy.tiles.map((tile) => ({
@@ -230,6 +233,9 @@ type EditorState = {
   setProjectName: (name: string) => void;
   setTileSize: (width: number, height: number) => void;
   setTileGuideMode: (mode: TileGuideMode) => void;
+  setWorldSize: (width: number, height: number) => void;
+  paintWorldCell: (x: number, y: number, tileId: string | null) => void;
+  clearWorld: () => void;
   selectTile: (id: string) => void;
   createTile: (name: string, collectionId: string) => void;
   duplicateTile: (id: string) => void;
@@ -874,6 +880,41 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         })),
       ),
     ),
+  setWorldSize: (width, height) =>
+    set((state) => {
+      const safeWidth = Math.max(1, Math.min(64, Math.round(width)));
+      const safeHeight = Math.max(1, Math.min(64, Math.round(height)));
+      const cells = Object.fromEntries(
+        Object.entries(state.project.world.cells).filter(([key]) => {
+          const [x, y] = key.split(",").map(Number);
+          return x < safeWidth && y < safeHeight;
+        }),
+      );
+      return snapshot(state, {
+        ...state.project,
+        world: { width: safeWidth, height: safeHeight, cells },
+        updatedAt: now(),
+      });
+    }),
+  paintWorldCell: (x, y, tileId) =>
+    set((state) => {
+      if (x < 0 || y < 0 || x >= state.project.world.width || y >= state.project.world.height) return state;
+      const cells = { ...state.project.world.cells };
+      const key = `${x},${y}`;
+      if (tileId) cells[key] = tileId;
+      else delete cells[key];
+      return snapshot(state, {
+        ...state.project,
+        world: { ...state.project.world, cells },
+        updatedAt: now(),
+      });
+    }),
+  clearWorld: () =>
+    set((state) => snapshot(state, {
+      ...state.project,
+      world: { ...state.project.world, cells: {} },
+      updatedAt: now(),
+    })),
   selectTile: (id) =>
     set((state) => {
       const tile = state.project.tiles.find((item) => item.id === id);

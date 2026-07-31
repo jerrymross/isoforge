@@ -9,6 +9,7 @@ import {
   Moon,
   PencilRuler,
   Paintbrush,
+  Map as MapIcon,
   Shield,
   Redo2,
   Settings2,
@@ -26,6 +27,7 @@ import { ToolRail } from "@/components/toolbar/ToolRail";
 import { GeneratorPanel } from "@/components/toolbar/GeneratorPanel";
 import { CollisionPanel } from "@/components/toolbar/CollisionPanel";
 import { PainterPanel } from "@/components/painter/PainterPanel";
+import { WorldEditor } from "@/components/world/WorldEditor";
 import { loadProject } from "@/lib/project-db";
 import {
   normalizeProject,
@@ -212,6 +214,13 @@ export function EditorShell() {
           >
             <Paintbrush size={13} /> Painter
           </button>
+          <button
+            className={workspaceMode === "world" ? "active" : ""}
+            onClick={() => setWorkspaceMode("world")}
+            title="Bygg en värld av projektets tiles"
+          >
+            <MapIcon size={13} /> World Editor
+          </button>
         </div>
         <span className="context-divider" />
         <label>
@@ -261,13 +270,13 @@ export function EditorShell() {
           <ToolRail />
         ) : workspaceMode === "collision" ? (
           <CollisionPanel />
-        ) : workspaceMode === "painter" ? (
+        ) : workspaceMode === "painter" || workspaceMode === "world" ? (
           <div className="workspace-side-placeholder" aria-hidden="true" />
         ) : (
           <GeneratorPanel mode={workspaceMode} />
         )}
         <div className="center-stack">
-          {workspaceMode === "painter" ? <PainterPanel /> : <>
+          {workspaceMode === "painter" ? <PainterPanel /> : workspaceMode === "world" ? <WorldEditor /> : <>
             <EditorCanvas />
             <div className="bottom-dock">
               <TileLibrary />

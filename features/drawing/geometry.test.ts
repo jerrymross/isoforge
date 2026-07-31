@@ -37,6 +37,7 @@ const project: Project = {
   canvasHeight: 192,
   projection: "isometric-2-1",
   activeTileId: "tile",
+  world: { width: 12, height: 12, cells: {} },
   updatedAt: "2026-01-01T00:00:00.000Z",
   style: {
     strokeWidth: 2,
