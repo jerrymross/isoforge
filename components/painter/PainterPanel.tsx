@@ -85,6 +85,17 @@ function painterPathData(points: Point[], object: VectorObject, face: FaceId): s
   }).join(" ");
 }
 
+function uvGuidePath(quad: Point[], position: number, vertical: boolean): string {
+  const samples = Array.from({ length: 13 }, (_, index) => index / 12);
+  return samples.map((sample, index) => {
+    const point = mapUvToFace(
+      vertical ? { x: position, y: sample } : { x: sample, y: position },
+      quad,
+    );
+    return `${index ? "L" : "M"} ${point.x} ${point.y}`;
+  }).join(" ");
+}
+
 function faceCanvasStyle(object: VectorObject, face: FaceId): CSSProperties {
   const points = projectedFacePoints(object, face);
   const minX = Math.min(...points.map((point) => point.x));
@@ -286,8 +297,14 @@ export function PainterPanel() {
                   mapUvToFace({ x: (column + 1) / UV_SIZE, y: (row + 1) / UV_SIZE }, activeQuad),
                   mapUvToFace({ x: column / UV_SIZE, y: (row + 1) / UV_SIZE }, activeQuad),
                 ];
-                return <polygon key={`${face}-${index}`} points={corners.map((point) => `${point.x},${point.y}`).join(" ")} fill={drawMode === "cells" ? cell : object.style.fill} stroke="rgba(255,255,255,.72)" strokeWidth="0.002" />;
+                return <polygon key={`${face}-${index}`} points={corners.map((point) => `${point.x},${point.y}`).join(" ")} fill={drawMode === "cells" ? cell : object.style.fill} stroke="none" />;
               })}
+              {Array.from({ length: UV_SIZE + 1 }, (_, index) => index / UV_SIZE).map((position) => (
+                <g key={`guide-${position}`} className="painter-uv-guides">
+                  <path d={uvGuidePath(activeQuad, position, true)} />
+                  <path d={uvGuidePath(activeQuad, position, false)} />
+                </g>
+              ))}
               {(paint.vectors?.[face] ?? []).map((path, index) => (
                 <path key={`saved-${index}`} d={painterPathData(path.points, object, face)} fill="none" stroke={path.color} strokeWidth={path.width} strokeLinecap="round" strokeLinejoin="round" />
               ))}
