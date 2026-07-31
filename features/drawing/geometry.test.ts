@@ -3,6 +3,7 @@ import {
   autoPlaceObjects,
   autoSizeObjects,
   autoSizeObjectsToTile,
+  ellipseFromBounds,
   isoGridOffset,
   makeIsoBox,
   normalizeAngle,
@@ -12,6 +13,7 @@ import {
   objectTiltTransform,
   objectTransform,
   penPathData,
+  roundedPolygonPath,
   samplePenPath,
   snapObjectAngle,
   snapObjectTilt,
@@ -131,6 +133,22 @@ describe("isometrisk geometri", () => {
     expect(circle[1]).toHaveLength(2);
     expect(circle[0][0]).toEqual({ x: 384, y: 304 });
     expect(circle[0][12]).toEqual({ x: 320, y: 336 });
+  });
+
+  it("creates editable ellipses and rounds every polygon corner", () => {
+    const ellipse = ellipseFromBounds({ x: 0, y: 0 }, { x: 128, y: 64 });
+    const rounded = roundedPolygonPath([
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 },
+    ], 12);
+
+    expect(ellipse).toHaveLength(48);
+    expect(ellipse[0]).toEqual({ x: 128, y: 32 });
+    expect(ellipse[12]).toEqual({ x: 64, y: 64 });
+    expect(rounded.match(/ Q /g)).toHaveLength(4);
+    expect(rounded.endsWith(" Z")).toBe(true);
   });
 
   it("låser linjer till en isometrisk vinkel", () => {

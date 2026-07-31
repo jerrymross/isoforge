@@ -3,6 +3,7 @@ import type { Project, Tile, VectorObject } from "@/types/editor";
 import {
   objectTransform,
   pointsToString,
+  roundedPolygonPath,
   TILE_CENTER,
   tileDiamond,
 } from "@/features/drawing/geometry";
@@ -50,6 +51,9 @@ function renderObjectContent(object: VectorObject): string {
       `<polygon points="${rightFace}" ${style} fill="${shade(object.style.fill, -32)}"/>`,
       `<polygon points="${topFace}" ${style} fill="${shade(object.style.fill, 12)}"/>`,
     ].join("");
+  }
+  if ((object.cornerRadius ?? 0) > 0) {
+    return `<path d="${roundedPolygonPath(object.points, object.cornerRadius)}" ${style}/>`;
   }
   return `<polygon points="${pointsToString(object.points)}" ${style}/>`;
 }

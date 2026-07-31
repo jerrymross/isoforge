@@ -5,6 +5,7 @@ import { collisionBounds } from "@/features/collision/collision";
 import {
   objectTransform,
   pointsToString,
+  roundedPolygonPath,
   tileGuideFaces,
   TILE_CENTER,
 } from "@/features/drawing/geometry";
@@ -226,26 +227,46 @@ export function VectorShape({
         </>
       ) : (
         <>
-          <polygon
-            points={pointsToString(object.points)}
-            fill={uvFaceColor(object, "top")}
-            {...common}
-          />
+          {(object.cornerRadius ?? 0) > 0 ? (
+            <path
+              d={roundedPolygonPath(object.points, object.cornerRadius)}
+              fill={uvFaceColor(object, "top")}
+              {...common}
+            />
+          ) : (
+            <polygon
+              points={pointsToString(object.points)}
+              fill={uvFaceColor(object, "top")}
+              {...common}
+            />
+          )}
           {object.points.length === 4 && <UvCellOverlay object={object} face="top" quad={canonicalUvQuad(object.points)} />}
           {object.points.length === 4 && <UvVectorOverlay object={object} face="top" quad={canonicalUvQuad(object.points)} />}
         </>
       )}
       {selected && (
         <>
-          <polygon
-            points={pointsToString(object.points)}
-            fill="none"
-            stroke="#f06b45"
-            strokeWidth="1.5"
-            strokeDasharray="4 3"
-            vectorEffect="non-scaling-stroke"
-            pointerEvents="none"
-          />
+          {object.kind !== "line" && (object.cornerRadius ?? 0) > 0 ? (
+            <path
+              d={roundedPolygonPath(object.points, object.cornerRadius)}
+              fill="none"
+              stroke="#f06b45"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
+          ) : (
+            <polygon
+              points={pointsToString(object.points)}
+              fill="none"
+              stroke="#f06b45"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
+          )}
           {object.points.map((point, index) => (
             <circle
               key={`${object.id}-${index}`}

@@ -31,6 +31,46 @@ export function tileDiamond(width: number, height: number, center = TILE_CENTER)
   ];
 }
 
+export function ellipseFromBounds(start: Point, end: Point, segments = 48): Point[] {
+  const centerX = (start.x + end.x) / 2;
+  const centerY = (start.y + end.y) / 2;
+  const radiusX = Math.abs(end.x - start.x) / 2;
+  const radiusY = Math.abs(end.y - start.y) / 2;
+  return Array.from({ length: Math.max(12, segments) }, (_, index) => {
+    const angle = index / Math.max(12, segments) * Math.PI * 2;
+    return {
+      x: centerX + Math.cos(angle) * radiusX,
+      y: centerY + Math.sin(angle) * radiusY,
+    };
+  });
+}
+
+export function roundedPolygonPath(points: Point[], radius = 0): string {
+  if (!points.length) return "";
+  if (points.length < 3 || radius <= 0) {
+    return `${points.map((point, index) => `${index ? "L" : "M"} ${point.x} ${point.y}`).join(" ")} Z`;
+  }
+  const corners = points.map((point, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    const previousLength = Math.hypot(previous.x - point.x, previous.y - point.y);
+    const nextLength = Math.hypot(next.x - point.x, next.y - point.y);
+    const offset = Math.min(Math.max(0, radius), previousLength / 2, nextLength / 2);
+    return {
+      start: {
+        x: point.x + (previous.x - point.x) / Math.max(previousLength, 0.0001) * offset,
+        y: point.y + (previous.y - point.y) / Math.max(previousLength, 0.0001) * offset,
+      },
+      corner: point,
+      end: {
+        x: point.x + (next.x - point.x) / Math.max(nextLength, 0.0001) * offset,
+        y: point.y + (next.y - point.y) / Math.max(nextLength, 0.0001) * offset,
+      },
+    };
+  });
+  return `${corners.map((corner, index) => `${index ? "L" : "M"} ${corner.start.x} ${corner.start.y} Q ${corner.corner.x} ${corner.corner.y} ${corner.end.x} ${corner.end.y}`).join(" ")} Z`;
+}
+
 export function tileGuidePolygon(
   mode: TileGuideMode,
   width: number,

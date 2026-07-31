@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  ellipseFromBounds,
   makeIsoBox,
   objectBounds,
   penPathData,
@@ -389,6 +390,17 @@ export function EditorCanvas() {
         { x: snapped.x, y: snapped.y + 56 },
         { x: snapped.x - 56, y: snapped.y + 28 },
       ]);
+    } else if (tool === "ellipse") {
+      const end = event.shiftKey
+        ? (() => {
+            const size = Math.max(Math.abs(snappedPoint.x - start.x), Math.abs(snappedPoint.y - start.y));
+            return {
+              x: start.x + Math.sign(snappedPoint.x - start.x || 1) * size,
+              y: start.y + Math.sign(snappedPoint.y - start.y || 1) * size,
+            };
+          })()
+        : snappedPoint;
+      setDraft(ellipseFromBounds(start, end));
     }
   }
 
@@ -423,7 +435,7 @@ export function EditorCanvas() {
     const object: VectorObject = {
       id: crypto.randomUUID(),
       name:
-        kind === "iso-box" ? "Isometrisk box" : kind === "line" ? "Linje" : "Polygon",
+        kind === "iso-box" ? "Isometrisk box" : kind === "line" ? "Linje" : kind === "ellipse" ? "Cirkel / ellips" : "Polygon",
       kind,
       layerId: selectedLayerId,
       points: draft,
@@ -734,7 +746,7 @@ export function EditorCanvas() {
                 object={{
                   id: "draft",
                   name: "Förhandsvisning",
-                  kind: tool === "iso-box" ? "iso-box" : tool === "polygon" ? "polygon" : "line",
+                  kind: tool === "iso-box" ? "iso-box" : tool === "polygon" ? "polygon" : tool === "ellipse" ? "ellipse" : "line",
                   layerId: selectedLayerId,
                   points: draft,
                   height: 72,

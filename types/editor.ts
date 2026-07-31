@@ -13,6 +13,7 @@ export type Tool =
   | "pen"
   | "line"
   | "polygon"
+  | "ellipse"
   | "iso-box";
 
 export type WorkspaceMode = "draw" | "convert" | "objects" | "collision" | "painter" | "world";
@@ -25,7 +26,7 @@ export type TileGuideMode =
   | "roof"
   | "circle";
 
-export type VectorKind = "line" | "polygon" | "iso-box" | "iso-cylinder";
+export type VectorKind = "line" | "polygon" | "ellipse" | "iso-box" | "iso-cylinder";
 
 export type VectorStyle = {
   fill: string;
@@ -74,6 +75,7 @@ export type VectorObject = {
   height: number;
   rotation?: number;
   tilt?: number;
+  cornerRadius?: number;
   style: VectorStyle;
   uvPaint?: UvPaint;
   locked: boolean;

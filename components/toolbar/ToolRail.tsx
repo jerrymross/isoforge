@@ -3,6 +3,7 @@
 import {
   Box,
   CheckCheck,
+  Circle,
   Hexagon,
   Link2,
   Link2Off,
@@ -27,6 +28,7 @@ const tools: Array<{
   { id: "pen", label: "Ritstift", icon: PenTool, shortcut: "P" },
   { id: "line", label: "Rak linje", icon: PenLine, shortcut: "L" },
   { id: "polygon", label: "Polygon", icon: Hexagon, shortcut: "G" },
+  { id: "ellipse", label: "Cirkel / ellips", icon: Circle, shortcut: "C" },
   { id: "iso-box", label: "Isometrisk box", icon: Box, shortcut: "B" },
 ];
 

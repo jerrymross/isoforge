@@ -122,6 +122,21 @@ export function Inspector() {
           }
         />
       </label>
+      {selected.kind === "polygon" && (
+        <label className="range-field">
+          <span>Runda alla hörn <b>{Math.round(selected.cornerRadius ?? 0)}px</b></span>
+          <input
+            type="range"
+            min="0"
+            max="64"
+            step="1"
+            value={selected.cornerRadius ?? 0}
+            onChange={(event) =>
+              updateObject(selected.id, { cornerRadius: Number(event.target.value) })
+            }
+          />
+        </label>
+      )}
       <div className="angle-editor">
         <div className="angle-editor-heading">
           <span><RotateCw size={13} /> Rotation i tileplanet</span>

@@ -43,6 +43,7 @@ const toolKeys: Record<string, Tool> = {
   p: "pen",
   l: "line",
   g: "polygon",
+  c: "ellipse",
   b: "iso-box",
 };
 
